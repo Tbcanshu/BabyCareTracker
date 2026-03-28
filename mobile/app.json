@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Baby Care Tracker",
+    "slug": "baby-care-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.babycaretracker.app"
+    }
+  }
+}
