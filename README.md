@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🍼 Baby Care Tracker
 
 A complete React Native (Expo) app for tracking your baby's daily care activities including feeding, diaper changes, cry sessions, sleep, and bath times.
@@ -186,3 +187,6 @@ eas build --platform android --profile preview
 ## 🔒 Privacy
 
 All data is stored **locally on-device** using AsyncStorage. No data is sent to any server.
+=======
+# BabyCareTracker
+>>>>>>> cf9b37b308e220d3562ce2af1e0f204642052de6
