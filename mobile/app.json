@@ -7,7 +7,21 @@
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "android": {
-      "package": "com.babycaretracker.app"
-    }
+      "package": "com.babycaretracker.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Baby Care Tracker to access your photos.",
+          "cameraPermission": "Allow Baby Care Tracker to use your camera."
+        }
+      ]
+    ]
   }
 }

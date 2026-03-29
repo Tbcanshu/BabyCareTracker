@@ -1,29 +1,32 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
-import { Text, View } from 'react-native';
-import { COLORS, FONTS, RADIUS } from './src/theme';
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
+import { Text, View } from "react-native";
+import { COLORS, FONTS } from "./src/theme";
 
-import HomeScreen from './src/screens/HomeScreen';
-import HistoryScreen from './src/screens/HistoryScreen';
-import StatsScreen from './src/screens/StatsScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
-import AddEntryScreen from './src/screens/AddEntryScreen';
+import HomeScreen from "./src/screens/HomeScreen";
+import HistoryScreen from "./src/screens/HistoryScreen";
+import StatsScreen from "./src/screens/StatsScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
+import AddEntryScreen from "./src/screens/AddEntryScreen";
+import GrowthScreen from "./src/screens/GrowthScreen"; // ← NEW
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 const tabIcon = (emoji, focused) => (
-  <View style={{
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: focused ? COLORS.primaryLight : 'transparent',
-  }}>
-    <Text style={{ fontSize: 22 }}>{emoji}</Text>
+  <View
+    style={{
+      alignItems: "center",
+      justifyContent: "center",
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: focused ? COLORS.primaryLight : "transparent",
+    }}
+  >
+    <Text style={{ fontSize: 20 }}>{emoji}</Text>
   </View>
 );
 
@@ -42,8 +45,8 @@ const HomeTabs = () => (
       tabBarActiveTintColor: COLORS.primaryDark,
       tabBarInactiveTintColor: COLORS.textLight,
       tabBarLabelStyle: {
-        fontSize: FONTS.sizes.xs,
-        fontWeight: '600',
+        fontSize: 10,
+        fontWeight: "600",
         marginTop: -2,
       },
     }}
@@ -52,32 +55,40 @@ const HomeTabs = () => (
       name="Home"
       component={HomeScreen}
       options={{
-        tabBarIcon: ({ focused }) => tabIcon('🏠', focused),
-        tabBarLabel: 'Home',
+        tabBarIcon: ({ focused }) => tabIcon("🏠", focused),
+        tabBarLabel: "Home",
       }}
     />
     <Tab.Screen
       name="History"
       component={HistoryScreen}
       options={{
-        tabBarIcon: ({ focused }) => tabIcon('📋', focused),
-        tabBarLabel: 'History',
+        tabBarIcon: ({ focused }) => tabIcon("📋", focused),
+        tabBarLabel: "History",
+      }}
+    />
+    <Tab.Screen
+      name="Growth"
+      component={GrowthScreen}
+      options={{
+        tabBarIcon: ({ focused }) => tabIcon("📸", focused),
+        tabBarLabel: "Growth",
       }}
     />
     <Tab.Screen
       name="Stats"
       component={StatsScreen}
       options={{
-        tabBarIcon: ({ focused }) => tabIcon('📊', focused),
-        tabBarLabel: 'Stats',
+        tabBarIcon: ({ focused }) => tabIcon("📊", focused),
+        tabBarLabel: "Stats",
       }}
     />
     <Tab.Screen
       name="Profile"
       component={ProfileScreen}
       options={{
-        tabBarIcon: ({ focused }) => tabIcon('👶', focused),
-        tabBarLabel: 'Profile',
+        tabBarIcon: ({ focused }) => tabIcon("👶", focused),
+        tabBarLabel: "Profile",
       }}
     />
   </Tab.Navigator>
@@ -96,7 +107,7 @@ const AppNavigator = () => (
         },
         headerTintColor: COLORS.textPrimary,
         headerTitleStyle: {
-          fontWeight: '700',
+          fontWeight: "700",
           fontSize: FONTS.sizes.lg,
           color: COLORS.textPrimary,
         },
@@ -113,10 +124,10 @@ const AppNavigator = () => (
         name="AddEntry"
         component={AddEntryScreen}
         options={({ route }) => {
-          const { TASK_CONFIG } = require('./src/theme');
+          const { TASK_CONFIG } = require("./src/theme");
           const config = TASK_CONFIG[route.params?.type] || {};
           return {
-            title: `Log ${config.label || 'Entry'}`,
+            title: `Log ${config.label || "Entry"}`,
             headerStyle: {
               backgroundColor: config.lightBg || COLORS.surface,
               elevation: 0,
