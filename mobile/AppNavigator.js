@@ -10,7 +10,8 @@ import HistoryScreen from "./src/screens/HistoryScreen";
 import StatsScreen from "./src/screens/StatsScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import AddEntryScreen from "./src/screens/AddEntryScreen";
-import GrowthScreen from "./src/screens/GrowthScreen"; // ← NEW
+import GrowthScreen from "./src/screens/GrowthScreen";
+import RemindersScreen from "./src/screens/RemindersScreen"; // ← NEW
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -20,13 +21,13 @@ const tabIcon = (emoji, focused) => (
     style={{
       alignItems: "center",
       justifyContent: "center",
-      width: 40,
-      height: 40,
-      borderRadius: 12,
+      width: 38,
+      height: 38,
+      borderRadius: 10,
       backgroundColor: focused ? COLORS.primaryLight : "transparent",
     }}
   >
-    <Text style={{ fontSize: 20 }}>{emoji}</Text>
+    <Text style={{ fontSize: 18 }}>{emoji}</Text>
   </View>
 );
 
@@ -38,14 +39,14 @@ const HomeTabs = () => (
         backgroundColor: COLORS.surface,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
-        height: 62,
+        height: 64,
         paddingBottom: 8,
         paddingTop: 4,
       },
       tabBarActiveTintColor: COLORS.primaryDark,
       tabBarInactiveTintColor: COLORS.textLight,
       tabBarLabelStyle: {
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: "600",
         marginTop: -2,
       },
@@ -73,6 +74,14 @@ const HomeTabs = () => (
       options={{
         tabBarIcon: ({ focused }) => tabIcon("📸", focused),
         tabBarLabel: "Growth",
+      }}
+    />
+    <Tab.Screen
+      name="Reminders"
+      component={RemindersScreen}
+      options={{
+        tabBarIcon: ({ focused }) => tabIcon("🔔", focused),
+        tabBarLabel: "Reminders",
       }}
     />
     <Tab.Screen

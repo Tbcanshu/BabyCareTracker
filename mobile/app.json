@@ -5,23 +5,20 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "package": "com.babycaretracker.app",
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ]
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF5F8"
+      }
     },
-    "plugins": [
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Allow Baby Care Tracker to access your photos.",
-          "cameraPermission": "Allow Baby Care Tracker to use your camera."
-        }
-      ]
-    ]
+    "extra": {
+      "eas": {
+        "projectId": "845f6dd7-4fbc-4f81-9d08-ee8d30c6fdda"
+      }
+    }
   }
 }

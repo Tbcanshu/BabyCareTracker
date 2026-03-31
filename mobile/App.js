@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import AppNavigator from './AppNavigator';
-import { COLORS } from './src/theme';
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import AppNavigator from "./AppNavigator";
+import { COLORS } from "./src/theme";
+import { setupNotifications } from "./src/storage/remindersStorage";
 
 export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Small splash delay
+    // Setup notification handler
+    setupNotifications();
     const t = setTimeout(() => setReady(true), 800);
     return () => clearTimeout(t);
   }, []);
@@ -36,22 +38,19 @@ const styles = StyleSheet.create({
   splash: {
     flex: 1,
     backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  splashEmoji: {
-    fontSize: 72,
-    marginBottom: 16,
-  },
+  splashEmoji: { fontSize: 72, marginBottom: 16 },
   splashTitle: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.textPrimary,
     letterSpacing: -0.5,
   },
   splashSubtitle: {
     fontSize: 18,
     color: COLORS.primaryDark,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
