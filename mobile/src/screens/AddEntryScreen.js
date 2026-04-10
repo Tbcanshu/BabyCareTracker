@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS, TASK_CONFIG } from '../theme';
 import { addEntry } from '../storage';
@@ -53,7 +54,7 @@ const AddEntryScreen = ({ navigation, route }) => {
   const config = TASK_CONFIG[type] || {};
 
   const [form, setForm] = useState({
-    amount_ml: '',
+    amount_oz: '',
     feed_type: '',
     duration_min: '',
     notes: '',
@@ -61,10 +62,34 @@ const AddEntryScreen = ({ navigation, route }) => {
     reason: '',
     sleep_type: '',
     bath_type: '',
+    sleep_start: '',
+    sleep_end: '',
+  });
+  const [showReminder, setShowReminder] = useState(false);
+  const [reminderData, setReminderData] = useState({
+    interval: '3',
+    unit: 'hours', // 'hours' or 'minutes'
   });
   const [loading, setLoading] = useState(false);
 
-  const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+  const update = (key, val) => {
+    setForm((f) => {
+      const newForm = { ...f, [key]: val };
+      // Auto-calculate sleep duration
+      if (key === 'sleep_start' || key === 'sleep_end') {
+        const start = newForm.sleep_start;
+        const end = newForm.sleep_end;
+        if (start && end && /^\d{2}:\d{2}$/.test(start) && /^\d{2}:\d{2}$/.test(end)) {
+          const [h1, m1] = start.split(':').map(Number);
+          const [h2, m2] = end.split(':').map(Number);
+          let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+          if (diff < 0) diff += 24 * 60; // Crosses midnight
+          newForm.duration_min = String(diff);
+        }
+      }
+      return newForm;
+    });
+  };
 
   const handleSave = async () => {
     if (!type) {
@@ -81,11 +106,31 @@ const AddEntryScreen = ({ navigation, route }) => {
     });
 
     const saved = await addEntry(entry);
+
+    if (saved && showReminder) {
+      const { saveReminder, generateId } = require('../storage/remindersStorage');
+      const intervalHours = reminderData.unit === 'hours' 
+        ? Number(reminderData.interval) 
+        : Number(reminderData.interval) / 60;
+      
+      await saveReminder({
+        id: generateId(),
+        activityKey: type,
+        label: config.label || type,
+        emoji: config.emoji || '🔔',
+        color: config.darkColor || COLORS.primary,
+        lightBg: config.lightBg || COLORS.primaryLight,
+        type: 'interval',
+        intervalHours,
+        message: `Time for ${config.label || type}!`,
+      });
+    }
+
     setLoading(false);
 
     if (saved) {
       Alert.alert('Saved! ✅', `${config.label} logged successfully.`, [
-        { text: 'Log Another', onPress: () => setForm({ amount_ml: '', feed_type: '', duration_min: '', notes: '', consistency: '', reason: '', sleep_type: '', bath_type: '' }) },
+        { text: 'Log Another', onPress: () => setForm({ amount_oz: '', feed_type: '', duration_min: '', notes: '', consistency: '', reason: '', sleep_type: '', bath_type: '', sleep_start: '', sleep_end: '' }) },
         { text: 'Done', onPress: () => navigation.goBack() },
       ]);
     } else {
@@ -121,11 +166,11 @@ const AddEntryScreen = ({ navigation, route }) => {
         {type === 'milk' && (
           <>
             <Input
-              label="Amount (ml)"
-              value={form.amount_ml}
-              onChangeText={(v) => update('amount_ml', v)}
-              placeholder="e.g. 120"
-              keyboardType="numeric"
+              label="Amount (oz)"
+              value={form.amount_oz}
+              onChangeText={(v) => update('amount_oz', v)}
+              placeholder="e.g. 4.0"
+              keyboardType="decimal-pad"
             />
             <Input
               label="Duration (minutes)"
@@ -175,11 +220,29 @@ const AddEntryScreen = ({ navigation, route }) => {
         {/* ── Sleep Fields ── */}
         {type === 'sleep' && (
           <>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Input
+                  label="Start Time"
+                  value={form.sleep_start}
+                  onChangeText={(v) => update('sleep_start', v)}
+                  placeholder="22:00"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Input
+                  label="Wake Up"
+                  value={form.sleep_end}
+                  onChangeText={(v) => update('sleep_end', v)}
+                  placeholder="07:30"
+                />
+              </View>
+            </View>
             <Input
-              label="Duration (minutes)"
+              label="Total Duration (min)"
               value={form.duration_min}
               onChangeText={(v) => update('duration_min', v)}
-              placeholder="e.g. 90"
+              placeholder="Auto-calculated"
               keyboardType="numeric"
             />
             <ChipSelect
@@ -209,6 +272,49 @@ const AddEntryScreen = ({ navigation, route }) => {
           placeholder="Any observations..."
           multiline
         />
+
+        {/* Reminder Section */}
+        <View style={styles.reminderSection}>
+          <TouchableOpacity 
+            style={styles.reminderToggle} 
+            onPress={async () => {
+              if (!showReminder) {
+                const { requestNotificationPermissions } = require('../storage/remindersStorage');
+                const granted = await requestNotificationPermissions();
+                if (!granted) {
+                  Alert.alert('Permission Needed', 'Please enable notifications in settings to use reminders.');
+                  return;
+                }
+              }
+              setShowReminder(!showReminder);
+            }}
+          >
+            <Text style={styles.reminderToggleText}>
+              {showReminder ? '🔔 Set Reminder: ON' : '🔕 Add Reminder?'}
+            </Text>
+            <Text style={{ fontSize: 20 }}>{showReminder ? '✅' : '➕'}</Text>
+          </TouchableOpacity>
+          
+          {showReminder && (
+            <View style={styles.reminderBox}>
+              <Text style={styles.reminderLabel}>Remind me again in:</Text>
+              <View style={styles.reminderRow}>
+                <TextInput
+                  style={styles.reminderInput}
+                  value={reminderData.interval}
+                  onChangeText={(v) => setReminderData({ ...reminderData, interval: v })}
+                  keyboardType="numeric"
+                />
+                <TouchableOpacity 
+                  onPress={() => setReminderData({ ...reminderData, unit: reminderData.unit === 'hours' ? 'minutes' : 'hours' })}
+                  style={styles.unitBtn}
+                >
+                  <Text style={styles.unitBtnText}>{reminderData.unit}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Save Button */}
         <Button
@@ -269,6 +375,66 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: FONTS.sizes.md,
     fontWeight: '600',
+  },
+  reminderSection: {
+    marginVertical: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  reminderToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SPACING.xs,
+  },
+  reminderToggleText: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  reminderBox: {
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    marginTop: SPACING.xs,
+  },
+  reminderLabel: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+    fontWeight: '600',
+  },
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  reminderInput: {
+    backgroundColor: COLORS.surfaceAlt,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.primaryDark,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    width: 70,
+    textAlign: 'center',
+  },
+  unitBtn: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: RADIUS.sm,
+  },
+  unitBtnText: {
+    color: COLORS.primaryDark,
+    fontWeight: '700',
+    fontSize: FONTS.sizes.sm,
   },
 });
 

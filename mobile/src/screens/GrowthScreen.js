@@ -112,6 +112,7 @@ const GrowthScreen = () => {
     new Date().toISOString().split("T")[0],
   );
   const [newWeight, setNewWeight] = useState("");
+  const [newWeightOz, setNewWeightOz] = useState("");
   const [newHeight, setNewHeight] = useState("");
   const [newMeasureDate, setNewMeasureDate] = useState(
     new Date().toISOString().split("T")[0],
@@ -211,13 +212,15 @@ const GrowthScreen = () => {
       return;
     }
     await addMeasurement({
-      weight_kg: newWeight,
-      height_cm: newHeight,
+      weight_lbs: newWeight,
+      weight_oz: newWeightOz,
+      height_in: newHeight,
       measuredAt: newMeasureDate + "T00:00:00.000Z",
       notes: newMeasureNote,
     });
     setMeasureModalVisible(false);
     setNewWeight("");
+    setNewWeightOz("");
     setNewHeight("");
     setNewMeasureNote("");
     setNewMeasureDate(new Date().toISOString().split("T")[0]);
@@ -342,7 +345,7 @@ const GrowthScreen = () => {
             <View style={styles.latestCard}>
               <Text style={styles.latestTitle}>Latest Measurements</Text>
               <View style={styles.latestRow}>
-                {measurements[0].weight_kg ? (
+            {measurements[0].weight_lbs ? (
                   <View
                     style={[
                       styles.latestStat,
@@ -351,12 +354,12 @@ const GrowthScreen = () => {
                   >
                     <Text style={styles.latestEmoji}>⚖️</Text>
                     <Text style={[styles.latestValue, { color: C.orange }]}>
-                      {measurements[0].weight_kg} kg
+                      {measurements[0].weight_lbs} lbs {measurements[0].weight_oz || 0} oz
                     </Text>
                     <Text style={styles.latestLabel}>Weight</Text>
                   </View>
                 ) : null}
-                {measurements[0].height_cm ? (
+                {measurements[0].height_in ? (
                   <View
                     style={[
                       styles.latestStat,
@@ -365,7 +368,7 @@ const GrowthScreen = () => {
                   >
                     <Text style={styles.latestEmoji}>📏</Text>
                     <Text style={[styles.latestValue, { color: C.purple }]}>
-                      {measurements[0].height_cm} cm
+                      {measurements[0].height_in} in
                     </Text>
                     <Text style={styles.latestLabel}>Height</Text>
                   </View>
@@ -375,19 +378,19 @@ const GrowthScreen = () => {
           )}
 
           {/* Simple weight chart */}
-          {measurements.filter((m) => m.weight_kg).length > 1 && (
+          {measurements.filter((m) => m.weight_lbs).length > 1 && (
             <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>⚖️ Weight Over Time</Text>
+              <Text style={styles.chartTitle}>⚖️ Weight Over Time (lbs)</Text>
               <SimpleLineChart
                 data={measurements
-                  .filter((m) => m.weight_kg)
+                  .filter((m) => m.weight_lbs)
                   .slice(0, 8)
                   .reverse()
                   .map((m) => ({
-                    value: parseFloat(m.weight_kg),
+                    value: parseFloat(m.weight_lbs) + (parseFloat(m.weight_oz || 0) / 16),
                     label: format(
                       new Date(m.measuredAt || m.createdAt),
-                      "MMM d",
+                      "MM-dd",
                     ),
                   }))}
                 color={C.orange}
@@ -396,19 +399,19 @@ const GrowthScreen = () => {
           )}
 
           {/* Height chart */}
-          {measurements.filter((m) => m.height_cm).length > 1 && (
+          {measurements.filter((m) => m.height_in).length > 1 && (
             <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>📏 Height Over Time</Text>
+              <Text style={styles.chartTitle}>📏 Height Over Time (in)</Text>
               <SimpleLineChart
                 data={measurements
-                  .filter((m) => m.height_cm)
+                  .filter((m) => m.height_in)
                   .slice(0, 8)
                   .reverse()
                   .map((m) => ({
-                    value: parseFloat(m.height_cm),
+                    value: parseFloat(m.height_in),
                     label: format(
                       new Date(m.measuredAt || m.createdAt),
-                      "MMM d",
+                      "MM-dd",
                     ),
                   }))}
                 color={C.purple}
@@ -432,18 +435,18 @@ const GrowthScreen = () => {
                   <Text style={styles.measureDate}>
                     {format(
                       new Date(m.measuredAt || m.createdAt),
-                      "MMM dd, yyyy",
+                      "MM-dd-yyyy",
                     )}
                   </Text>
                   <View style={styles.measureValues}>
-                    {m.weight_kg ? (
+                    {m.weight_lbs ? (
                       <Text style={styles.measureValue}>
-                        ⚖️ {m.weight_kg} kg
+                        ⚖️ {m.weight_lbs} lbs {m.weight_oz || 0} oz
                       </Text>
                     ) : null}
-                    {m.height_cm ? (
+                    {m.height_in ? (
                       <Text style={styles.measureValue}>
-                        📏 {m.height_cm} cm
+                        📏 {m.height_in} in
                       </Text>
                     ) : null}
                   </View>
@@ -528,7 +531,7 @@ const GrowthScreen = () => {
                       ✅{" "}
                       {format(
                         new Date(achievedData.achievedAt),
-                        "MMM dd, yyyy",
+                        "MM-dd-yyyy",
                       )}
                     </Text>
                   ) : null}
@@ -585,12 +588,12 @@ const GrowthScreen = () => {
               </TouchableOpacity>
             )}
 
-            <Text style={styles.fieldLabel}>Date (YYYY-MM-DD)</Text>
+            <Text style={styles.fieldLabel}>Date (MM-DD-YYYY)</Text>
             <TextInput
               style={styles.input}
               value={newPhotoDate}
               onChangeText={setNewPhotoDate}
-              placeholder="2024-06-15"
+              placeholder="06-15-2024"
               placeholderTextColor={C.textLight}
             />
 
@@ -630,31 +633,46 @@ const GrowthScreen = () => {
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>📏 Log Measurement</Text>
 
-            <Text style={styles.fieldLabel}>Date (YYYY-MM-DD)</Text>
+            <Text style={styles.fieldLabel}>Date (MM-DD-YYYY)</Text>
             <TextInput
               style={styles.input}
               value={newMeasureDate}
               onChangeText={setNewMeasureDate}
-              placeholder="2024-06-15"
+              placeholder="06-15-2024"
               placeholderTextColor={C.textLight}
             />
 
-            <Text style={styles.fieldLabel}>Weight (kg)</Text>
-            <TextInput
-              style={styles.input}
-              value={newWeight}
-              onChangeText={setNewWeight}
-              placeholder="e.g. 6.5"
-              keyboardType="decimal-pad"
-              placeholderTextColor={C.textLight}
-            />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Weight (lbs)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newWeight}
+                  onChangeText={setNewWeight}
+                  placeholder="e.g. 14"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={C.textLight}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Ounces (oz)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newWeightOz || ''}
+                  onChangeText={setNewWeightOz}
+                  placeholder="e.g. 5"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={C.textLight}
+                />
+              </View>
+            </View>
 
-            <Text style={styles.fieldLabel}>Height (cm)</Text>
+            <Text style={styles.fieldLabel}>Height (inches)</Text>
             <TextInput
               style={styles.input}
               value={newHeight}
               onChangeText={setNewHeight}
-              placeholder="e.g. 65"
+              placeholder="e.g. 24"
               keyboardType="decimal-pad"
               placeholderTextColor={C.textLight}
             />
@@ -710,7 +728,7 @@ const GrowthScreen = () => {
               <Text style={styles.photoViewDate}>
                 {format(
                   new Date(selectedPhoto.takenAt || selectedPhoto.createdAt),
-                  "MMMM dd, yyyy",
+                  "MM-dd-yyyy",
                 )}
               </Text>
               <TouchableOpacity

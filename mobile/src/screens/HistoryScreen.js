@@ -24,9 +24,10 @@ const FILTERS = [
   { key: 'shower', label: 'Bath', emoji: '🛁' },
 ];
 
-const HistoryScreen = ({ navigation }) => {
+const HistoryScreen = ({ navigation, route }) => {
+  const { initialFilter } = route.params || {};
   const [entries, setEntries] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState(initialFilter || 'all');
   const [groupedEntries, setGroupedEntries] = useState({});
 
   const loadEntries = async () => {
@@ -37,7 +38,8 @@ const HistoryScreen = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       loadEntries();
-    }, [])
+      if (initialFilter) setFilter(initialFilter);
+    }, [initialFilter])
   );
 
   // Re-group when filter changes

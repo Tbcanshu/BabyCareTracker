@@ -80,60 +80,6 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Today's Stats */}
-      {stats && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today at a Glance</Text>
-          <View style={styles.statsRow}>
-            <StatBadge
-              emoji="🍼"
-              label="Feeds"
-              value={stats.milk.count}
-              color={COLORS.milkDark}
-            />
-            <StatBadge
-              emoji="💧"
-              label="Pees"
-              value={stats.pee.count}
-              color={COLORS.peeDark}
-            />
-            <StatBadge
-              emoji="💩"
-              label="Poops"
-              value={stats.poop.count}
-              color={COLORS.poopDark}
-            />
-          </View>
-          <View style={[styles.statsRow, { marginTop: 8 }]}>
-            <StatBadge
-              emoji="😢"
-              label="Cry"
-              value={stats.cry.totalMin > 0 ? formatDuration(stats.cry.totalMin) : stats.cry.count}
-              color={COLORS.cryDark}
-            />
-            <StatBadge
-              emoji="😴"
-              label="Sleep"
-              value={stats.sleep.totalMin > 0 ? formatDuration(stats.sleep.totalMin) : stats.sleep.count}
-              color={COLORS.sleepDark}
-            />
-            <StatBadge
-              emoji="🛁"
-              label="Baths"
-              value={stats.shower.count}
-              color={COLORS.showerDark}
-            />
-          </View>
-          {stats.milk.totalMl > 0 && (
-            <View style={styles.milkTotal}>
-              <Text style={styles.milkTotalText}>
-                🍼 Total milk today: <Text style={styles.milkTotalValue}>{stats.milk.totalMl} ml</Text>
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-
       {/* Quick Add */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Add</Text>
@@ -149,30 +95,65 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Recent Entries */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Today</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('History')}>
-            <Text style={styles.seeAll}>See All →</Text>
-          </TouchableOpacity>
-        </View>
-        {recentEntries.length === 0 ? (
-          <EmptyState
-            emoji="🌟"
-            title="Nothing logged yet"
-            subtitle="Tap a button above to start tracking"
-          />
-        ) : (
-          recentEntries.map((entry) => (
-            <EntryCard
-              key={entry.id}
-              entry={entry}
-              onDelete={handleEntryDelete}
+      {/* Today's Stats */}
+      {stats && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Today at a Glance</Text>
+          <View style={styles.statsRow}>
+            <StatBadge
+              emoji="🍼"
+              label="Feeds"
+              value={stats.milk.count}
+              color={COLORS.milkDark}
+              onPress={() => navigation.navigate('History', { initialFilter: 'milk' })}
             />
-          ))
-        )}
-      </View>
+            <StatBadge
+              emoji="💧"
+              label="Pees"
+              value={stats.pee.count}
+              color={COLORS.peeDark}
+              onPress={() => navigation.navigate('History', { initialFilter: 'pee' })}
+            />
+            <StatBadge
+              emoji="💩"
+              label="Poops"
+              value={stats.poop.count}
+              color={COLORS.poopDark}
+              onPress={() => navigation.navigate('History', { initialFilter: 'poop' })}
+            />
+          </View>
+          <View style={[styles.statsRow, { marginTop: 8 }]}>
+            <StatBadge
+              emoji="😢"
+              label="Cry"
+              value={stats.cry.totalMin > 0 ? formatDuration(stats.cry.totalMin) : stats.cry.count}
+              color={COLORS.cryDark}
+              onPress={() => navigation.navigate('History', { initialFilter: 'cry' })}
+            />
+            <StatBadge
+              emoji="😴"
+              label="Sleep"
+              value={stats.sleep.totalMin > 0 ? formatDuration(stats.sleep.totalMin) : stats.sleep.count}
+              color={COLORS.sleepDark}
+              onPress={() => navigation.navigate('History', { initialFilter: 'sleep' })}
+            />
+            <StatBadge
+              emoji="🛁"
+              label="Baths"
+              value={stats.shower.count}
+              color={COLORS.showerDark}
+              onPress={() => navigation.navigate('History', { initialFilter: 'shower' })}
+            />
+          </View>
+          {stats.milk.totalOz > 0 && (
+            <View style={styles.milkTotal}>
+              <Text style={styles.milkTotalText}>
+                🍼 Total milk today: <Text style={styles.milkTotalValue}>{stats.milk.totalOz.toFixed(1)} oz</Text>
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
     </ScrollView>
   );
 };

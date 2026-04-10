@@ -175,12 +175,17 @@ export const EmptyState = ({ emoji, title, subtitle }) => (
 
 // ─── Stat Badge ──────────────────────────────────────────────────────────────
 
-export const StatBadge = ({ emoji, label, value, color }) => (
-  <View style={[styles.statBadge, { backgroundColor: color + '22' }]}>
+export const StatBadge = ({ emoji, label, value, color, onPress }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    disabled={!onPress}
+    activeOpacity={0.7}
+    style={[styles.statBadge, { backgroundColor: color + '22' }]}
+  >
     <Text style={styles.statEmoji}>{emoji}</Text>
     <Text style={[styles.statValue, { color }]}>{value}</Text>
     <Text style={styles.statLabel}>{label}</Text>
-  </View>
+  </TouchableOpacity>
 );
 
 // ─── Divider ─────────────────────────────────────────────────────────────────

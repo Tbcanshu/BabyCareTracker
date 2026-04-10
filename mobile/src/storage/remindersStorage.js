@@ -7,38 +7,51 @@ const KEYS = {
 };
 
 // ─── Notification Handler Setup ───────────────────────────────────────────────
-export const setupNotifications = () => {
+export const setupNotifications = async () => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
     }),
   });
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('baby-alarm', {
+      name: 'Baby Alarms',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 500, 500, 500],
+      lightColor: '#FF0000',
+      sound: 'default', // Ideally a custom sound file
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: true,
+    });
+  }
+
+  await Notifications.setNotificationCategoryAsync('ALARM_CATEGORY', [
+    {
+      identifier: 'STOP_ALARM',
+      buttonTitle: '🛑 Stop Alarm',
+      options: { opensAppToForeground: false },
+    },
+  ]);
 };
 
 // ─── Request Permissions ──────────────────────────────────────────────────────
 export const requestNotificationPermissions = async () => {
   try {
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("baby-reminders", {
-        name: "Baby Care Reminders",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#E8A0BF",
-        sound: "default",
-      });
-    }
+    await setupNotifications();
     const { status: existingStatus } =
       await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-    if (existingStatus !== "granted") {
+    if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-    return finalStatus === "granted";
+    return finalStatus === 'granted';
   } catch (e) {
-    console.error("requestNotificationPermissions error:", e);
+    console.error('requestNotificationPermissions error:', e);
     return false;
   }
 };
@@ -69,10 +82,12 @@ export const scheduleNotification = async (reminder) => {
         title: reminder.emoji + " " + reminder.label,
         body: reminder.message || "Time for " + reminder.label + "!",
         sound: "default",
-        priority: "high",
+        priority: Notifications.AndroidImportance.MAX,
         color: reminder.color || "#E8A0BF",
+        categoryIdentifier: 'ALARM_CATEGORY',
       },
       trigger,
+      channelId: 'baby-alarm',
     });
 
     return notifId;

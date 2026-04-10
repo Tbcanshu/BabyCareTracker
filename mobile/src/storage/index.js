@@ -113,7 +113,7 @@ export const getTodayStats = async () => {
   const entries = await getEntriesByDate(today);
 
   const stats = {
-    milk: { count: 0, totalMl: 0 },
+    milk: { count: 0, totalOz: 0 },
     pee: { count: 0 },
     poop: { count: 0 },
     cry: { count: 0, totalMin: 0 },
@@ -125,7 +125,7 @@ export const getTodayStats = async () => {
     switch (e.type) {
       case 'milk':
         stats.milk.count++;
-        stats.milk.totalMl += Number(e.amount_ml) || 0;
+        stats.milk.totalOz += Number(e.amount_oz) || 0;
         break;
       case 'pee':
         stats.pee.count++;

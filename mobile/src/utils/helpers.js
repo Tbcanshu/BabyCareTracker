@@ -13,7 +13,7 @@ export const formatDate = (isoString) => {
     const date = parseISO(isoString);
     if (isToday(date)) return 'Today';
     if (isYesterday(date)) return 'Yesterday';
-    return format(date, 'MMM dd, yyyy');
+    return format(date, 'MM-dd-yyyy');
   } catch {
     return '---';
   }
@@ -21,7 +21,7 @@ export const formatDate = (isoString) => {
 
 export const formatDateFull = (isoString) => {
   try {
-    return format(parseISO(isoString), 'EEEE, MMMM dd yyyy');
+    return format(parseISO(isoString), 'MM-dd-yyyy');
   } catch {
     return '---';
   }
@@ -29,7 +29,7 @@ export const formatDateFull = (isoString) => {
 
 export const formatDateShort = (isoString) => {
   try {
-    return format(parseISO(isoString), 'MMM dd');
+    return format(parseISO(isoString), 'MM-dd');
   } catch {
     return '---';
   }
@@ -67,8 +67,8 @@ export const groupEntriesByDate = (entries) => {
 export const getEntrySubtitle = (entry) => {
   switch (entry.type) {
     case 'milk':
-      return entry.amount_ml
-        ? `${entry.amount_ml} ml · ${entry.feed_type || 'Feed'}`
+      return entry.amount_oz
+        ? `${entry.amount_oz} oz · ${entry.feed_type || 'Feed'}`
         : entry.feed_type || 'Feed';
     case 'pee':
       return 'Diaper changed';

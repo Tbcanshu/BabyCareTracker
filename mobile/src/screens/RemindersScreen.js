@@ -125,6 +125,7 @@ const RemindersScreen = () => {
   const [selectedActivity, setSelectedActivity] = useState(ACTIVITIES[0]);
   const [reminderType, setReminderType] = useState("interval"); // 'interval' | 'time'
   const [intervalHours, setIntervalHours] = useState("3");
+  const [intervalUnit, setIntervalUnit] = useState("hours"); // "hours" | "minutes"
   const [customTime, setCustomTime] = useState("08:00");
   const [customMessage, setCustomMessage] = useState("");
 
@@ -172,7 +173,9 @@ const RemindersScreen = () => {
       color: selectedActivity.color,
       lightBg: selectedActivity.lightBg,
       type: reminderType,
-      intervalHours: Number(intervalHours),
+      intervalHours: intervalUnit === "hours" ? Number(intervalHours) : Number(intervalHours) / 60,
+      intervalValue: Number(intervalHours),
+      intervalUnit: intervalUnit,
       time: customTime,
       message: customMessage || selectedActivity.defaultMsg,
     };
@@ -415,7 +418,12 @@ const RemindersScreen = () => {
                   keyboardType="numeric"
                   maxLength={3}
                 />
-                <Text style={styles.intervalLabel}>hours</Text>
+                <TouchableOpacity 
+                  onPress={() => setIntervalUnit(intervalUnit === "hours" ? "minutes" : "hours")}
+                  style={styles.unitToggleBtn}
+                >
+                  <Text style={styles.unitToggleBtnText}>{intervalUnit}</Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -502,7 +510,7 @@ const ReminderCard = ({ reminder, onToggle, onDelete }) => (
       <Text style={styles.reminderLabel}>{reminder.label}</Text>
       <Text style={styles.reminderDetail}>
         {reminder.type === "interval"
-          ? `🔁 Every ${reminder.intervalHours}h`
+          ? `🔁 Every ${reminder.intervalValue || reminder.intervalHours}${reminder.intervalUnit || 'h'}`
           : `🕐 Daily at ${reminder.time}`}
       </Text>
       <Text style={styles.reminderMsg} numberOfLines={1}>
@@ -763,6 +771,19 @@ const styles = StyleSheet.create({
     borderLeftColor: "#00897B",
   },
   vaccineNoteText: { fontSize: 12, color: "#00574B", lineHeight: 18 },
+  unitToggleBtn: {
+    backgroundColor: C.primaryLight,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: C.primaryDark,
+  },
+  unitToggleBtnText: {
+    color: C.primaryDark,
+    fontWeight: "700",
+    fontSize: 14,
+  },
 });
 
 export default RemindersScreen;
