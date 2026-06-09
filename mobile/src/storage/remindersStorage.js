@@ -1,5 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Notifications from "expo-notifications";
+import notifee, { 
+  AndroidImportance, 
+  AndroidNotificationVisibility, 
+  TriggerType, 
+  RepeatFrequency,
+  AndroidCategory
+} from "@notifee/react-native";
 import { Platform } from "react-native";
 
 const KEYS = {
@@ -8,89 +14,95 @@ const KEYS = {
 
 // ─── Notification Handler Setup ───────────────────────────────────────────────
 export const setupNotifications = async () => {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-  });
-
+  // Create the high-priority alarm channel for Android
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('baby-alarm', {
+    await notifee.createChannel({
+      id: 'baby-alarm',
       name: 'Baby Alarms',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 500, 500, 500],
-      lightColor: '#FF0000',
-      sound: 'default', // Ideally a custom sound file
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      importance: AndroidImportance.HIGH,
+      visibility: AndroidNotificationVisibility.PUBLIC,
+      sound: 'default', // User should replace with a custom sound file name later
+      vibration: true,
       bypassDnd: true,
     });
   }
-
-  await Notifications.setNotificationCategoryAsync('ALARM_CATEGORY', [
-    {
-      identifier: 'STOP_ALARM',
-      buttonTitle: '🛑 Stop Alarm',
-      options: { opensAppToForeground: false },
-    },
-  ]);
 };
 
 // ─── Request Permissions ──────────────────────────────────────────────────────
 export const requestNotificationPermissions = async () => {
   try {
-    await setupNotifications();
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    return finalStatus === 'granted';
+    const settings = await notifee.requestPermission();
+    return settings.authorizationStatus >= 1; // 1 = Authorized
   } catch (e) {
     console.error('requestNotificationPermissions error:', e);
     return false;
   }
 };
 
-// ─── Schedule LOCAL notification only ────────────────────────────────────────
+// ─── Schedule LOCAL notification ─────────────────────────────────────────────
 export const scheduleNotification = async (reminder) => {
   try {
     let trigger;
 
     if (reminder.type === "interval") {
+      // Notifee Interval trigger repeats every X seconds
       const seconds = Math.max(60, reminder.intervalHours * 60 * 60);
       trigger = {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds,
-        repeats: true,
+        type: TriggerType.INTERVAL,
+        interval: seconds,
+        timeUnit: 'SECONDS',
       };
     } else {
+      // Daily trigger at specific time
       const [hour, minute] = (reminder.time || "08:00").split(":").map(Number);
+      const now = new Date();
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
+      
+      // If time has already passed today, schedule for tomorrow
+      if (date < now) {
+        date.setDate(date.getDate() + 1);
+      }
+
       trigger = {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour,
-        minute,
+        type: TriggerType.TIMESTAMP,
+        timestamp: date.getTime(),
+        repeatFrequency: RepeatFrequency.DAILY,
+        alarmManager: true, // Crucial for "Real" Alarms on Android
       };
     }
 
-    const notifId = await Notifications.scheduleNotificationAsync({
-      content: {
+    const notifId = await notifee.createTriggerNotification(
+      {
+        id: reminder.id, // Use reminder ID as notification ID for easier management
         title: reminder.emoji + " " + reminder.label,
         body: reminder.message || "Time for " + reminder.label + "!",
-        sound: "default",
-        priority: Notifications.AndroidImportance.MAX,
-        color: reminder.color || "#E8A0BF",
-        categoryIdentifier: 'ALARM_CATEGORY',
+        android: {
+          channelId: 'baby-alarm',
+          importance: AndroidImportance.HIGH,
+          category: AndroidCategory.ALARM,
+          pressAction: { id: 'default' },
+          // This ensures the sound keeps playing until the notification is dismissed
+          loopSound: true,
+          // Ensures the notification shows up over other apps
+          fullScreenAction: { id: 'default' },
+          actions: [
+            {
+              title: '🛑 Stop Alarm',
+              pressAction: { id: 'stop-alarm' },
+            },
+          ],
+        },
+        ios: {
+          sound: 'default',
+          critical: true, // Bypasses silent mode (requires entitlement)
+          criticalVolume: 0.9, // Ensure it's loud
+        },
       },
-      trigger,
-      channelId: 'baby-alarm',
-    });
+      trigger
+    );
 
-    return notifId;
+
+    return reminder.id; // Notifee uses the provided ID or returns generated one
   } catch (e) {
     console.error("scheduleNotification error:", e);
     return null;
@@ -99,7 +111,7 @@ export const scheduleNotification = async (reminder) => {
 
 export const cancelNotification = async (notifId) => {
   try {
-    if (notifId) await Notifications.cancelScheduledNotificationAsync(notifId);
+    if (notifId) await notifee.cancelNotification(notifId);
     return true;
   } catch (e) {
     return false;
@@ -108,7 +120,7 @@ export const cancelNotification = async (notifId) => {
 
 export const cancelAllNotifications = async () => {
   try {
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    await notifee.cancelAllNotifications();
   } catch (e) {}
 };
 
@@ -177,3 +189,4 @@ export const deleteReminder = async (id) => {
 
 export const generateId = () =>
   Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+

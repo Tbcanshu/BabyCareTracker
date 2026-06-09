@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppNavigator from "./AppNavigator";
 import { COLORS } from "./src/theme";
 import { setupNotifications } from "./src/storage/remindersStorage";
+import { AlarmService } from "./src/services/AlarmService";
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -12,6 +13,12 @@ export default function App() {
   useEffect(() => {
     // Setup notification handler
     setupNotifications();
+    
+    // Initialize AlarmService
+    AlarmService.initialize().catch((err) => {
+      console.log("Failed to initialize AlarmService:", err);
+    });
+
     const t = setTimeout(() => setReady(true), 800);
     return () => clearTimeout(t);
   }, []);

@@ -12,6 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getAllReminders,
   saveReminder,
@@ -117,6 +118,7 @@ const ACTIVITIES = [
 ];
 
 const RemindersScreen = () => {
+  const insets = useSafeAreaInsets();
   const [reminders, setReminders] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -224,7 +226,7 @@ const RemindersScreen = () => {
   const activeCount = reminders.filter((r) => r.active).length;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -535,7 +537,7 @@ const ReminderCard = ({ reminder, onToggle, onDelete }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 40 },
+  scrollContent: { padding: 16, paddingBottom: 100 },
 
   permWarning: {
     backgroundColor: "#FFF3CD",

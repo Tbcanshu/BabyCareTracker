@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { FONTS, RADIUS, SHADOWS } from '../theme';
 
 const TaskButton = ({ config, taskKey, onPress }) => {
@@ -10,7 +10,11 @@ const TaskButton = ({ config, taskKey, onPress }) => {
       style={[styles.btn, { backgroundColor: config.lightBg }]}
     >
       <View style={[styles.iconBg, { backgroundColor: config.color + '55' }]}>
-        <Text style={styles.emoji}>{config.emoji}</Text>
+        {config.image ? (
+          <Image source={config.image} style={{ width: 36, height: 36 }} resizeMode="contain" />
+        ) : (
+          <Text style={styles.emoji}>{config.emoji}</Text>
+        )}
       </View>
       <Text style={[styles.label, { color: config.darkColor }]}>{config.label}</Text>
     </TouchableOpacity>

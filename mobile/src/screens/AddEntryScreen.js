@@ -13,6 +13,7 @@ import {
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS, TASK_CONFIG } from '../theme';
 import { addEntry } from '../storage';
 import { Button, Input, ChipSelect } from '../components/UI';
+import { activitiesApi } from '../utils/api';
 
 const FEED_TYPES = [
   { label: 'Breast', value: 'Breast' },
@@ -105,7 +106,19 @@ const AddEntryScreen = ({ navigation, route }) => {
       if (entry[k] === '') delete entry[k];
     });
 
-    const saved = await addEntry(entry);
+    let saved = false;
+    try {
+      // Temporarily hardcode baby_id = 1 for MVP integration
+      // Format notes as JSON to store structured data like amount, duration, etc.
+      await activitiesApi.logActivity(1, type, JSON.stringify(entry));
+      
+      // Also save locally for backward compatibility or offline support
+      saved = await addEntry(entry);
+    } catch (error) {
+      console.error("API save failed", error);
+      // Fallback to local
+      saved = await addEntry(entry);
+    }
 
     if (saved && showReminder) {
       const { saveReminder, generateId } = require('../storage/remindersStorage');

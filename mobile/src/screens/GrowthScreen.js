@@ -14,6 +14,7 @@ import {
   Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { format, parseISO } from "date-fns";
 import {
@@ -93,6 +94,7 @@ const formatMonthLabel = (key) => {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 const GrowthScreen = () => {
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("timeline");
   const [photos, setPhotos] = useState([]);
   const [measurements, setMeasurements] = useState([]);
@@ -242,7 +244,7 @@ const GrowthScreen = () => {
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Tab Bar */}
       <View style={styles.tabBar}>
         {tabs.map((tab) => (
@@ -842,7 +844,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 12, fontWeight: "600", color: C.textLight },
   tabTextActive: { color: C.primaryDark },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 40 },
+  scrollContent: { padding: 16, paddingBottom: 100 },
 
   addPhotoBtn: {
     backgroundColor: C.primaryDark,

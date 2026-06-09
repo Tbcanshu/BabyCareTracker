@@ -1,17 +1,17 @@
 export const COLORS = {
-  // Primary palette - soft lavender-pink
-  primary: "#E8A0BF",
-  primaryDark: "#C76B9A",
-  primaryLight: "#F5D0E5",
+  // Primary palette - default neutral
+  primary: "#D0D0D0",
+  primaryDark: "#A0A0A0",
+  primaryLight: "#F0F0F0",
 
   // Accent
   accent: "#BAD7E9",
   accentDark: "#7DB9D9",
 
   // Backgrounds
-  background: "#FFF8FB",
+  background: "#FFFFFF",
   surface: "#FFFFFF",
-  surfaceAlt: "#FFF0F6",
+  surfaceAlt: "#F8F8F8",
 
   // Task specific colors
   milk: "#FAD4B4",
@@ -40,6 +40,32 @@ export const COLORS = {
   success: "#4CAF7D",
   divider: "#F5E5F0",
   white: "#FFFFFF",
+};
+
+export const setGlobalTheme = (gender) => {
+  if (gender === 'Boy') {
+    Object.assign(COLORS, {
+      primary: "#A0C4E8",
+      primaryDark: "#6B9AC7",
+      primaryLight: "#D0E5F5",
+      background: "#F4F9FF",
+      surfaceAlt: "#EBF4FF",
+      textPrimary: "#1A2B4C",
+      textSecondary: "#4A5F85",
+      border: "#E0EAF5",
+    });
+  } else if (gender === 'Girl') {
+    Object.assign(COLORS, {
+      primary: "#E8A0BF",
+      primaryDark: "#C76B9A",
+      primaryLight: "#F5D0E5",
+      background: "#FFF8FB",
+      surfaceAlt: "#FFF0F6",
+      textPrimary: "#3A2140",
+      textSecondary: "#7A5F85",
+      border: "#F0E0F0",
+    });
+  }
 };
 
 export const FONTS = {
@@ -102,6 +128,7 @@ export const TASK_CONFIG = {
   milk: {
     label: "Milk Feed",
     emoji: "🍼",
+    image: { uri: "https://img.icons8.com/fluency/96/baby-bottle.png" },
     color: COLORS.milk,
     darkColor: COLORS.milkDark,
     lightBg: "#FFF6EE",
@@ -110,6 +137,7 @@ export const TASK_CONFIG = {
   pee: {
     label: "Diaper – Pee",
     emoji: "💧",
+    image: { uri: "https://img.icons8.com/fluency/96/nappy.png" },
     color: COLORS.pee,
     darkColor: COLORS.peeDark,
     lightBg: "#FFFDE8",
@@ -118,6 +146,7 @@ export const TASK_CONFIG = {
   poop: {
     label: "Diaper – Poop",
     emoji: "💩",
+    image: { uri: "https://img.icons8.com/fluency/96/poo.png" },
     color: COLORS.poop,
     darkColor: COLORS.poopDark,
     lightBg: "#F9F3EC",
@@ -126,6 +155,7 @@ export const TASK_CONFIG = {
   cry: {
     label: "Cry Session",
     emoji: "😢",
+    image: { uri: "https://img.icons8.com/fluency/96/crying-baby.png" },
     color: COLORS.cry,
     darkColor: COLORS.cryDark,
     lightBg: "#EEF5FF",
@@ -134,6 +164,7 @@ export const TASK_CONFIG = {
   sleep: {
     label: "Sleep",
     emoji: "😴",
+    image: { uri: "https://img.icons8.com/fluency/96/sleeping-in-bed.png" },
     color: COLORS.sleep,
     darkColor: COLORS.sleepDark,
     lightBg: "#F3F0FF",
@@ -142,6 +173,7 @@ export const TASK_CONFIG = {
   shower: {
     label: "Shower / Bath",
     emoji: "🛁",
+    image: { uri: "https://img.icons8.com/fluency/96/bath.png" },
     color: COLORS.shower,
     darkColor: COLORS.showerDark,
     lightBg: "#EDFDF6",

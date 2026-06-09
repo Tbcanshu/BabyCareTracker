@@ -6,6 +6,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS, TASK_CONFIG } from '../theme';
 import { getAllEntries } from '../storage';
 import { formatDuration, formatDateShort } from '../utils/helpers';
@@ -13,6 +14,7 @@ import { Card, SectionHeader } from '../components/UI';
 import { subDays, format, parseISO, startOfDay } from 'date-fns';
 
 const StatsScreen = () => {
+  const insets = useSafeAreaInsets();
   const [weeklyData, setWeeklyData] = useState([]);
   const [totals, setTotals] = useState({});
 
@@ -81,7 +83,7 @@ const StatsScreen = () => {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.md, paddingBottom: 100 }]}
       showsVerticalScrollIndicator={false}
     >
       {/* Weekly Bar Chart - Milk Feeds */}

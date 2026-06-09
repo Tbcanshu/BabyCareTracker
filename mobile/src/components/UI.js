@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  Image,
 } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../theme';
 
@@ -175,14 +176,18 @@ export const EmptyState = ({ emoji, title, subtitle }) => (
 
 // ─── Stat Badge ──────────────────────────────────────────────────────────────
 
-export const StatBadge = ({ emoji, label, value, color, onPress }) => (
+export const StatBadge = ({ emoji, image, label, value, color, onPress }) => (
   <TouchableOpacity
     onPress={onPress}
     disabled={!onPress}
     activeOpacity={0.7}
     style={[styles.statBadge, { backgroundColor: color + '22' }]}
   >
-    <Text style={styles.statEmoji}>{emoji}</Text>
+    {image ? (
+      <Image source={image} style={{ width: 26, height: 26, marginBottom: 4 }} resizeMode="contain" />
+    ) : (
+      <Text style={styles.statEmoji}>{emoji}</Text>
+    )}
     <Text style={[styles.statValue, { color }]}>{value}</Text>
     <Text style={styles.statLabel}>{label}</Text>
   </TouchableOpacity>

@@ -8,17 +8,61 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.babycaretracker.app",
+      "buildNumber": "1.0.0",
+      "deploymentTarget": "15.1",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio",
+          "fetch",
+          "remote-notification"
+        ],
+        "NSUserNotificationsUsageDescription": "This app will send alarm notifications for baby tracking"
+      }
+    },
     "android": {
       "package": "com.babycaretracker.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#FFF5F8"
-      }
+      },
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.FOREGROUND_SERVICE"
+      ]
     },
+    "plugins": [
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "deploymentTarget": "15.1",
+            "newArchEnabled": false
+          },
+          "android": {
+            "minSdkVersion": 24,
+            "targetSdkVersion": 34,
+            "compileSdkVersion": 34,
+            "newArchEnabled": false
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "845f6dd7-4fbc-4f81-9d08-ee8d30c6fdda"
       }
+    },
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

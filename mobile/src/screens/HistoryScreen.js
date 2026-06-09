@@ -8,10 +8,12 @@ import {
   ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS, TASK_CONFIG } from '../theme';
 import { getAllEntries } from '../storage';
 import { formatDate, groupEntriesByDate } from '../utils/helpers';
 import EntryCard from '../components/EntryCard';
+import { activitiesApi } from '../utils/api';
 import { EmptyState } from '../components/UI';
 
 const FILTERS = [
@@ -31,8 +33,22 @@ const HistoryScreen = ({ navigation, route }) => {
   const [groupedEntries, setGroupedEntries] = useState({});
 
   const loadEntries = async () => {
-    const all = await getAllEntries();
-    setEntries(all);
+    let allLocal = [];
+    try {
+      allLocal = await getAllEntries();
+    } catch (e) {
+      console.log(e);
+    }
+    
+    // Temporarily skip API calls for UI development
+    // try {
+    //   const apiActivities = await activitiesApi.getActivities(1);
+    //   ...
+    // } catch(e) {
+    //   console.error("Failed to load from API", e);
+    // }
+
+    setEntries(allLocal);
   };
 
   useFocusEffect(
@@ -51,10 +67,11 @@ const HistoryScreen = ({ navigation, route }) => {
 
   const handleDelete = () => loadEntries();
 
+  const insets = useSafeAreaInsets();
   const dateKeys = Object.keys(groupedEntries).sort((a, b) => b.localeCompare(a));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Filter Chips */}
       <ScrollView
         horizontal
@@ -127,7 +144,6 @@ const HistoryScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   filterBar: {
     maxHeight: 60,
@@ -168,7 +184,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: SPACING.md,
-    paddingBottom: SPACING.xxl,
+    paddingBottom: 100,
   },
   dateGroup: {
     marginBottom: SPACING.md,

@@ -8,9 +8,12 @@ import {
   Switch,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { getBabyProfile, saveBabyProfile, clearAllData } from '../storage';
 import { Button, Input, Card, Divider } from '../components/UI';
+import { authApi, clearAuthToken } from '../utils/api';
+import { AuthContext } from '../../AppNavigator';
 
 const ProfileScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -18,6 +21,7 @@ const ProfileScreen = ({ navigation }) => {
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
   const [saved, setSaved] = useState(false);
+  const authContext = React.useContext(AuthContext);
 
   const loadProfile = async () => {
     const profile = await getBabyProfile();
@@ -40,6 +44,9 @@ const ProfileScreen = ({ navigation }) => {
     const ok = await saveBabyProfile(profile);
     if (ok) {
       setSaved(true);
+      if (authContext?.updateGender) {
+        authContext.updateGender(gender);
+      }
       setTimeout(() => setSaved(false), 2000);
     }
   };
@@ -81,10 +88,12 @@ const ProfileScreen = ({ navigation }) => {
     return `${Math.floor(months / 12)} years old`;
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.md }]}
       showsVerticalScrollIndicator={false}
     >
       {/* Avatar */}
@@ -179,6 +188,22 @@ const ProfileScreen = ({ navigation }) => {
         </View>
       </Card>
 
+      {/* Auth Zone */}
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Account</Text>
+        <Button
+          title="Logout"
+          onPress={async () => {
+            try {
+              await authApi.logout();
+            } catch(e) {}
+            await clearAuthToken();
+            if (authContext) authContext.logout();
+          }}
+          style={{ marginTop: SPACING.sm }}
+        />
+      </Card>
+
       {/* Danger Zone */}
       <Card style={[styles.card, styles.dangerCard]}>
         <Text style={styles.dangerTitle}>⚠️ Danger Zone</Text>
@@ -197,7 +222,7 @@ const ProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1 },
   content: { padding: SPACING.md, paddingBottom: SPACING.xxl },
   avatarSection: { alignItems: 'center', marginBottom: SPACING.lg, paddingTop: SPACING.sm },
   avatar: {

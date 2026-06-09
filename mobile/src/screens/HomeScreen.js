@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS, TASK_CONFIG } from '../theme';
 import { getTodayStats, getBabyProfile } from '../storage';
 import { formatDuration, formatDateFull } from '../utils/helpers';
@@ -50,12 +51,13 @@ const HomeScreen = ({ navigation }) => {
     await loadData();
   };
 
+  const insets = useSafeAreaInsets();
   const todayStr = formatDateFull(new Date().toISOString());
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.md }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -80,6 +82,21 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* AI Assistant Banner */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Chat')}
+        style={styles.aiBanner}
+        activeOpacity={0.85}
+      >
+        <View style={styles.aiBannerLeft}>
+          <Text style={styles.aiBannerTitle}>Consult AI Baby Nurse 🩺</Text>
+          <Text style={styles.aiBannerSubtitle}>Get instant answers about feeding, sleep safety, & care tailored for {babyName}</Text>
+        </View>
+        <View style={styles.aiBannerIcon}>
+          <Text style={styles.aiBannerEmoji}>🤖</Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Quick Add */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Add</Text>
@@ -102,6 +119,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.statsRow}>
             <StatBadge
               emoji="🍼"
+              image={TASK_CONFIG.milk.image}
               label="Feeds"
               value={stats.milk.count}
               color={COLORS.milkDark}
@@ -109,6 +127,7 @@ const HomeScreen = ({ navigation }) => {
             />
             <StatBadge
               emoji="💧"
+              image={TASK_CONFIG.pee.image}
               label="Pees"
               value={stats.pee.count}
               color={COLORS.peeDark}
@@ -116,6 +135,7 @@ const HomeScreen = ({ navigation }) => {
             />
             <StatBadge
               emoji="💩"
+              image={TASK_CONFIG.poop.image}
               label="Poops"
               value={stats.poop.count}
               color={COLORS.poopDark}
@@ -125,6 +145,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={[styles.statsRow, { marginTop: 8 }]}>
             <StatBadge
               emoji="😢"
+              image={TASK_CONFIG.cry.image}
               label="Cry"
               value={stats.cry.totalMin > 0 ? formatDuration(stats.cry.totalMin) : stats.cry.count}
               color={COLORS.cryDark}
@@ -132,6 +153,7 @@ const HomeScreen = ({ navigation }) => {
             />
             <StatBadge
               emoji="😴"
+              image={TASK_CONFIG.sleep.image}
               label="Sleep"
               value={stats.sleep.totalMin > 0 ? formatDuration(stats.sleep.totalMin) : stats.sleep.count}
               color={COLORS.sleepDark}
@@ -139,6 +161,7 @@ const HomeScreen = ({ navigation }) => {
             />
             <StatBadge
               emoji="🛁"
+              image={TASK_CONFIG.shower.image}
               label="Baths"
               value={stats.shower.count}
               color={COLORS.showerDark}
@@ -161,7 +184,6 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.md,
@@ -246,6 +268,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+  },
+  aiBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surfaceAlt,
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    marginBottom: SPACING.lg,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    ...SHADOWS.sm,
+  },
+  aiBannerLeft: {
+    flex: 1,
+    paddingRight: SPACING.sm,
+  },
+  aiBannerTitle: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  aiBannerSubtitle: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  aiBannerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  aiBannerEmoji: {
+    fontSize: 24,
   },
 });
 
