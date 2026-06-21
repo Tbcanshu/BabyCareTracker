@@ -4,7 +4,8 @@ import notifee, {
   AndroidNotificationVisibility, 
   TriggerType, 
   RepeatFrequency,
-  AndroidCategory
+  AndroidCategory,
+  TimeUnit
 } from "@notifee/react-native";
 import { Platform } from "react-native";
 
@@ -45,19 +46,21 @@ export const scheduleNotification = async (reminder) => {
     let trigger;
 
     if (reminder.type === "interval") {
-      // Notifee Interval trigger repeats every X seconds
-      const seconds = Math.max(60, reminder.intervalHours * 60 * 60);
+      // Notifee IntervalTrigger requires explicit timeUnit and minimum 15 minutes
+      const rawHours = Number(reminder.intervalHours);
+      const totalMinutes = isNaN(rawHours) || rawHours <= 0 ? 60 : Math.round(rawHours * 60);
+      const intervalMinutes = Math.max(15, totalMinutes); // enforce 15-min minimum
       trigger = {
         type: TriggerType.INTERVAL,
-        interval: seconds,
-        timeUnit: 'SECONDS',
+        interval: intervalMinutes,
+        timeUnit: TimeUnit.MINUTES, // Must be explicit — omitting causes validation to assume SECONDS
       };
     } else {
       // Daily trigger at specific time
       const [hour, minute] = (reminder.time || "08:00").split(":").map(Number);
       const now = new Date();
       const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
-      
+
       // If time has already passed today, schedule for tomorrow
       if (date < now) {
         date.setDate(date.getDate() + 1);
@@ -71,40 +74,59 @@ export const scheduleNotification = async (reminder) => {
       };
     }
 
-    const notifId = await notifee.createTriggerNotification(
-      {
-        id: reminder.id, // Use reminder ID as notification ID for easier management
-        title: reminder.emoji + " " + reminder.label,
-        body: reminder.message || "Time for " + reminder.label + "!",
-        android: {
-          channelId: 'baby-alarm',
-          importance: AndroidImportance.HIGH,
-          category: AndroidCategory.ALARM,
-          pressAction: { id: 'default' },
-          // This ensures the sound keeps playing until the notification is dismissed
-          loopSound: true,
-          // Ensures the notification shows up over other apps
-          fullScreenAction: { id: 'default' },
-          actions: [
-            {
-              title: '🛑 Stop Alarm',
-              pressAction: { id: 'stop-alarm' },
-            },
-          ],
-        },
-        ios: {
-          sound: 'default',
-          critical: true, // Bypasses silent mode (requires entitlement)
-          criticalVolume: 0.9, // Ensure it's loud
-        },
+    const notificationPayload = {
+      id: reminder.id,
+      title: reminder.emoji + " " + reminder.label,
+      body: reminder.message || "Time for " + reminder.label + "!",
+      android: {
+        channelId: 'baby-alarm',
+        importance: AndroidImportance.HIGH,
+        category: AndroidCategory.ALARM,
+        pressAction: { id: 'default' },
+        loopSound: true,
+        fullScreenAction: { id: 'default' },
+        actions: [
+          {
+            title: '🛑 Stop Alarm',
+            pressAction: { id: 'stop-alarm' },
+          },
+        ],
       },
-      trigger
-    );
+      ios: {
+        sound: 'default',
+      },
+    };
 
+    try {
+      await notifee.createTriggerNotification(notificationPayload, trigger);
+    } catch (firstError) {
+      console.warn("First notification scheduling attempt failed, attempting fallback:", firstError.message);
 
-    return reminder.id; // Notifee uses the provided ID or returns generated one
+      let fallbackTrigger;
+      if (trigger.type === TriggerType.TIMESTAMP && trigger.alarmManager) {
+        // TIMESTAMP: retry without exact alarm (inexact delivery)
+        fallbackTrigger = { ...trigger, alarmManager: false };
+      } else {
+        // INTERVAL: fall back to a one-shot notification firing in 15 minutes
+        // (interval triggers don't have a non-exact fallback)
+        fallbackTrigger = {
+          type: TriggerType.TIMESTAMP,
+          timestamp: Date.now() + 15 * 60 * 1000,
+        };
+      }
+
+      // On iOS, remove critical alert flags if we lack the entitlement
+      if (Platform.OS === 'ios' && notificationPayload.ios) {
+        delete notificationPayload.ios.critical;
+        delete notificationPayload.ios.criticalVolume;
+      }
+
+      await notifee.createTriggerNotification(notificationPayload, fallbackTrigger);
+    }
+
+    return reminder.id;
   } catch (e) {
-    console.error("scheduleNotification error:", e);
+    console.error("scheduleNotification final fallback error:", e);
     return null;
   }
 };

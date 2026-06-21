@@ -13,7 +13,7 @@ import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { getBabyProfile, saveBabyProfile, clearAllData } from '../storage';
 import { Button, Input, Card, Divider } from '../components/UI';
 import { authApi, clearAuthToken } from '../utils/api';
-import { AuthContext } from '../../AppNavigator';
+import { AuthContext } from '../context/AuthContext';
 
 const ProfileScreen = ({ navigation }) => {
   const [name, setName] = useState('');

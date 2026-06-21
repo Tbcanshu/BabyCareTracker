@@ -30,15 +30,15 @@
       },
       "permissions": [
         "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.USE_EXACT_ALARM",
+        "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK",
         "android.permission.VIBRATE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.FOREGROUND_SERVICE"
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_TYPE_DATA_SYNC"
       ]
     },
     "plugins": [
-      "expo-notifications",
       [
         "expo-build-properties",
         {
@@ -54,7 +54,8 @@
             "newArchEnabled": false
           }
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "extra": {
       "eas": {

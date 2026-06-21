@@ -17,7 +17,7 @@ import AuthScreen from "./src/screens/AuthScreen";
 import ChatScreen from "./src/screens/ChatScreen";
 
 
-export const AuthContext = React.createContext();
+import { AuthContext } from "./src/context/AuthContext";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();

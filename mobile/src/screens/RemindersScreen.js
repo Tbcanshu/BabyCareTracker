@@ -154,12 +154,16 @@ const RemindersScreen = () => {
       return;
     }
 
-    if (
-      reminderType === "interval" &&
-      (!intervalHours || isNaN(intervalHours) || Number(intervalHours) <= 0)
-    ) {
-      Alert.alert("Invalid", "Please enter a valid number of hours.");
-      return;
+    if (reminderType === "interval") {
+      if (!intervalHours || isNaN(intervalHours) || Number(intervalHours) <= 0) {
+        Alert.alert("Invalid", "Please enter a valid number.");
+        return;
+      }
+      const intervalInMinutes = intervalUnit === "hours" ? Number(intervalHours) * 60 : Number(intervalHours);
+      if (intervalInMinutes < 15) {
+        Alert.alert("Invalid Interval", "Repeating reminders must be at least 15 minutes apart due to system battery-saving limitations.");
+        return;
+      }
     }
 
     if (reminderType === "time" && !/^\d{2}:\d{2}$/.test(customTime)) {
