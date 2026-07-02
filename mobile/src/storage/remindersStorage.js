@@ -1,12 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import notifee, { 
-  AndroidImportance, 
-  AndroidNotificationVisibility, 
-  TriggerType, 
-  RepeatFrequency,
-  AndroidCategory,
-  TimeUnit
-} from "@notifee/react-native";
+import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
 const KEYS = {
@@ -14,16 +7,27 @@ const KEYS = {
 };
 
 // ─── Notification Handler Setup ───────────────────────────────────────────────
+// This must be called at the module level (not inside a component) so
+// notifications that arrive while the app is in the foreground are shown.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 export const setupNotifications = async () => {
-  // Create the high-priority alarm channel for Android
-  if (Platform.OS === 'android') {
-    await notifee.createChannel({
-      id: 'baby-alarm',
-      name: 'Baby Alarms',
-      importance: AndroidImportance.HIGH,
-      visibility: AndroidNotificationVisibility.PUBLIC,
-      sound: 'default', // User should replace with a custom sound file name later
-      vibration: true,
+  // Create the Android notification channel (safe no-op on iOS)
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("baby-alarm", {
+      name: "Baby Alarms",
+      importance: Notifications.AndroidImportance.MAX,
+      sound: "default",
+      vibrationPattern: [0, 250, 250, 250],
+      enableVibrate: true,
+      lockscreenVisibility: 1, // 1 = PUBLIC
       bypassDnd: true,
     });
   }
@@ -32,10 +36,16 @@ export const setupNotifications = async () => {
 // ─── Request Permissions ──────────────────────────────────────────────────────
 export const requestNotificationPermissions = async () => {
   try {
-    const settings = await notifee.requestPermission();
-    return settings.authorizationStatus >= 1; // 1 = Authorized
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      },
+    });
+    return status === "granted";
   } catch (e) {
-    console.error('requestNotificationPermissions error:', e);
+    console.error("requestNotificationPermissions error:", e);
     return false;
   }
 };
@@ -46,94 +56,56 @@ export const scheduleNotification = async (reminder) => {
     let trigger;
 
     if (reminder.type === "interval") {
-      // Notifee IntervalTrigger requires explicit timeUnit and minimum 15 minutes
+      // intervalHours is stored as a decimal (e.g. 0.5 = 30 min, 3 = 3 hours)
       const rawHours = Number(reminder.intervalHours);
-      const totalMinutes = isNaN(rawHours) || rawHours <= 0 ? 60 : Math.round(rawHours * 60);
-      const intervalMinutes = Math.max(15, totalMinutes); // enforce 15-min minimum
+      const totalSeconds =
+        isNaN(rawHours) || rawHours <= 0 ? 3600 : Math.round(rawHours * 3600);
+      // expo-notifications minimum interval is 1 second (no 15-min floor needed
+      // for one-shot triggers — only for repeating ones on iOS, handled below)
+      const safeSeconds = Math.max(60, totalSeconds);
+
       trigger = {
-        type: TriggerType.INTERVAL,
-        interval: intervalMinutes,
-        timeUnit: TimeUnit.MINUTES, // Must be explicit — omitting causes validation to assume SECONDS
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: safeSeconds,
+        repeats: true,
       };
     } else {
-      // Daily trigger at specific time
+      // Daily trigger at a specific time
       const [hour, minute] = (reminder.time || "08:00").split(":").map(Number);
-      const now = new Date();
-      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
-
-      // If time has already passed today, schedule for tomorrow
-      if (date < now) {
-        date.setDate(date.getDate() + 1);
-      }
 
       trigger = {
-        type: TriggerType.TIMESTAMP,
-        timestamp: date.getTime(),
-        repeatFrequency: RepeatFrequency.DAILY,
-        alarmManager: true, // Crucial for "Real" Alarms on Android
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour,
+        minute,
       };
     }
 
-    const notificationPayload = {
-      id: reminder.id,
-      title: reminder.emoji + " " + reminder.label,
-      body: reminder.message || "Time for " + reminder.label + "!",
-      android: {
-        channelId: 'baby-alarm',
-        importance: AndroidImportance.HIGH,
-        category: AndroidCategory.ALARM,
-        pressAction: { id: 'default' },
-        loopSound: true,
-        fullScreenAction: { id: 'default' },
-        actions: [
-          {
-            title: '🛑 Stop Alarm',
-            pressAction: { id: 'stop-alarm' },
-          },
-        ],
+    const notifId = await Notifications.scheduleNotificationAsync({
+      identifier: reminder.id,
+      content: {
+        title: reminder.emoji + " " + reminder.label,
+        body: reminder.message || "Time for " + reminder.label + "!",
+        sound: "default",
+        vibrate: [0, 500, 300, 500, 300, 800],
+        priority: Notifications.AndroidNotificationPriority.MAX,
+        sticky: true, // Notification persists until user interacts
+        data: { isAlarm: true, reminderId: reminder.id },
+        // Android channel
+        ...(Platform.OS === "android" && { channelId: "baby-alarm" }),
       },
-      ios: {
-        sound: 'default',
-      },
-    };
+      trigger,
+    });
 
-    try {
-      await notifee.createTriggerNotification(notificationPayload, trigger);
-    } catch (firstError) {
-      console.warn("First notification scheduling attempt failed, attempting fallback:", firstError.message);
-
-      let fallbackTrigger;
-      if (trigger.type === TriggerType.TIMESTAMP && trigger.alarmManager) {
-        // TIMESTAMP: retry without exact alarm (inexact delivery)
-        fallbackTrigger = { ...trigger, alarmManager: false };
-      } else {
-        // INTERVAL: fall back to a one-shot notification firing in 15 minutes
-        // (interval triggers don't have a non-exact fallback)
-        fallbackTrigger = {
-          type: TriggerType.TIMESTAMP,
-          timestamp: Date.now() + 15 * 60 * 1000,
-        };
-      }
-
-      // On iOS, remove critical alert flags if we lack the entitlement
-      if (Platform.OS === 'ios' && notificationPayload.ios) {
-        delete notificationPayload.ios.critical;
-        delete notificationPayload.ios.criticalVolume;
-      }
-
-      await notifee.createTriggerNotification(notificationPayload, fallbackTrigger);
-    }
-
-    return reminder.id;
+    return notifId;
   } catch (e) {
-    console.error("scheduleNotification final fallback error:", e);
+    console.error("scheduleNotification error:", e);
     return null;
   }
 };
 
 export const cancelNotification = async (notifId) => {
   try {
-    if (notifId) await notifee.cancelNotification(notifId);
+    if (notifId) await Notifications.cancelScheduledNotificationAsync(notifId);
     return true;
   } catch (e) {
     return false;
@@ -142,7 +114,7 @@ export const cancelNotification = async (notifId) => {
 
 export const cancelAllNotifications = async () => {
   try {
-    await notifee.cancelAllNotifications();
+    await Notifications.cancelAllScheduledNotificationsAsync();
   } catch (e) {}
 };
 
@@ -211,4 +183,3 @@ export const deleteReminder = async (id) => {
 
 export const generateId = () =>
   Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-

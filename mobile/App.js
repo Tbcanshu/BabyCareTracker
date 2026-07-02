@@ -1,31 +1,33 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as Notifications from "expo-notifications";
 import AppNavigator from "./AppNavigator";
+import AlarmOverlay from "./src/components/AlarmOverlay";
 import { COLORS } from "./src/theme";
-import { setupNotifications } from "./src/storage/remindersStorage";
-import { AlarmService } from "./src/services/AlarmService";
+import {
+  setupNotifications,
+  requestNotificationPermissions,
+} from "./src/storage/remindersStorage";
 
 export default function App() {
   const [ready, setReady] = useState(false);
 
+  // Alarm overlay state
+  const [alarmVisible, setAlarmVisible] = useState(false);
+  const [alarmTitle, setAlarmTitle] = useState("");
+  const [alarmBody, setAlarmBody] = useState("");
+
+  // Refs for notification listeners (so we can clean them up)
+  const notifReceivedRef = useRef(null);
+  const notifResponseRef = useRef(null);
+
   useEffect(() => {
     const init = async () => {
       try {
-        // Race the entire init against a 3-second timeout so the app
-        // always loads even if notifee hangs in the dev client.
-        await Promise.race([
-          (async () => {
-            // 1. Create notification channel FIRST
-            await setupNotifications();
-            // 2. Initialize AlarmService (requests permissions)
-            await AlarmService.initialize().catch((err) => {
-              console.log("Failed to initialize AlarmService:", err);
-            });
-          })(),
-          new Promise((resolve) => setTimeout(resolve, 3000)),
-        ]);
+        await setupNotifications();
+        await requestNotificationPermissions();
       } catch (e) {
         console.log("App init error:", e);
       } finally {
@@ -33,6 +35,39 @@ export default function App() {
       }
     };
     init();
+
+    // ── Foreground notification listener ─────────────────────────────────────
+    // When a notification fires while the app is open, show the alarm overlay
+    notifReceivedRef.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        const { title, body } = notification.request.content;
+        setAlarmTitle(title || "⏰ Alarm!");
+        setAlarmBody(body || "Time to check on your baby!");
+        setAlarmVisible(true);
+      });
+
+    // ── Notification tap listener ─────────────────────────────────────────────
+    // When user taps the notification from the tray, also show the overlay
+    notifResponseRef.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const { title, body } = response.notification.request.content;
+        setAlarmTitle(title || "⏰ Alarm!");
+        setAlarmBody(body || "Time to check on your baby!");
+        setAlarmVisible(true);
+      });
+
+    return () => {
+      if (notifReceivedRef.current) {
+        Notifications.removeNotificationSubscription(
+          notifReceivedRef.current
+        );
+      }
+      if (notifResponseRef.current) {
+        Notifications.removeNotificationSubscription(
+          notifResponseRef.current
+        );
+      }
+    };
   }, []);
 
   if (!ready) {
@@ -49,6 +84,14 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="dark" backgroundColor={COLORS.surface} />
       <AppNavigator />
+
+      {/* Full-screen alarm overlay — renders above everything */}
+      <AlarmOverlay
+        visible={alarmVisible}
+        title={alarmTitle}
+        body={alarmBody}
+        onDismiss={() => setAlarmVisible(false)}
+      />
     </SafeAreaProvider>
   );
 }

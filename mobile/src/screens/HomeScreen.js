@@ -6,6 +6,7 @@ import {
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,11 +21,15 @@ const HomeScreen = ({ navigation }) => {
   const [stats, setStats] = useState(null);
   const [recentEntries, setRecentEntries] = useState([]);
   const [babyName, setBabyName] = useState('Baby');
+  const [babyPhoto, setBabyPhoto] = useState(null);
+  const [babyGender, setBabyGender] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = async () => {
     const profile = await getBabyProfile();
     if (profile?.name) setBabyName(profile.name);
+    if (profile?.photoUri) setBabyPhoto(profile.photoUri);
+    if (profile?.gender) setBabyGender(profile.gender);
 
     const result = await getTodayStats();
     setStats(result.stats);
@@ -78,7 +83,13 @@ const HomeScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Profile')}
           style={styles.profileBtn}
         >
-          <Text style={styles.profileEmoji}>👶</Text>
+          {babyPhoto ? (
+            <Image source={{ uri: babyPhoto }} style={styles.profilePhoto} />
+          ) : (
+            <Text style={styles.profileEmoji}>
+              {babyGender === 'Girl' ? '👧' : babyGender === 'Boy' ? '👦' : '👶'}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -219,7 +230,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     ...SHADOWS.sm,
+  },
+  profilePhoto: {
+    width: 52,
+    height: 52,
+    borderRadius: RADIUS.full,
   },
   profileEmoji: {
     fontSize: 28,

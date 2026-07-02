@@ -154,13 +154,15 @@ const AddEntryScreen = ({ navigation, route }) => {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 80}
     >
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="interactive"
       >
         {/* Header Card */}
         <View style={[styles.headerCard, { backgroundColor: config.lightBg || COLORS.primaryLight }]}>

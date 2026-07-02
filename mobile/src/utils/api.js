@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Replace this with your actual IP address instead of 127.0.0.1 if testing on a real device
 // For Android emulator use 10.0.2.2. For iOS emulator, localhost or 127.0.0.1 is fine.
 //const BASE_URL = 'http://192.168.56.1:8000/api';
-const BASE_URL = 'http://192.168.1.16:8000/api';
+const BASE_URL = 'http://192.168.1.10:8000/api';
 export const setAuthToken = async (token) => {
   await AsyncStorage.setItem('auth_token', token);
 };

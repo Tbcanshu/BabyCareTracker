@@ -12,6 +12,7 @@ import {
   FlatList,
   Dimensions,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -556,154 +557,176 @@ const GrowthScreen = () => {
 
       {/* ── ADD PHOTO MODAL ── */}
       <Modal visible={photoModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>📸 Add Photo</Text>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>📸 Add Photo</Text>
 
-            {newPhotoUri ? (
-              <Image source={{ uri: newPhotoUri }} style={styles.previewImg} />
-            ) : (
-              <View style={styles.photoPickerRow}>
-                <TouchableOpacity
-                  style={styles.photoPickerBtn}
-                  onPress={pickImage}
-                >
-                  <Text style={styles.photoPickerEmoji}>🖼️</Text>
-                  <Text style={styles.photoPickerLabel}>Gallery</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.photoPickerBtn}
-                  onPress={takePhoto}
-                >
-                  <Text style={styles.photoPickerEmoji}>📷</Text>
-                  <Text style={styles.photoPickerLabel}>Camera</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {newPhotoUri && (
-              <TouchableOpacity
-                onPress={() => setNewPhotoUri(null)}
-                style={styles.changePhotoBtn}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 8 }}
               >
-                <Text style={styles.changePhotoText}>Change Photo</Text>
-              </TouchableOpacity>
-            )}
+                {newPhotoUri ? (
+                  <Image source={{ uri: newPhotoUri }} style={styles.previewImg} />
+                ) : (
+                  <View style={styles.photoPickerRow}>
+                    <TouchableOpacity
+                      style={styles.photoPickerBtn}
+                      onPress={pickImage}
+                    >
+                      <Text style={styles.photoPickerEmoji}>🖼️</Text>
+                      <Text style={styles.photoPickerLabel}>Gallery</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.photoPickerBtn}
+                      onPress={takePhoto}
+                    >
+                      <Text style={styles.photoPickerEmoji}>📷</Text>
+                      <Text style={styles.photoPickerLabel}>Camera</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
-            <Text style={styles.fieldLabel}>Date (MM-DD-YYYY)</Text>
-            <TextInput
-              style={styles.input}
-              value={newPhotoDate}
-              onChangeText={setNewPhotoDate}
-              placeholder="06-15-2024"
-              placeholderTextColor={C.textLight}
-            />
+                {newPhotoUri && (
+                  <TouchableOpacity
+                    onPress={() => setNewPhotoUri(null)}
+                    style={styles.changePhotoBtn}
+                  >
+                    <Text style={styles.changePhotoText}>Change Photo</Text>
+                  </TouchableOpacity>
+                )}
 
-            <Text style={styles.fieldLabel}>Caption (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={newCaption}
-              onChangeText={setNewCaption}
-              placeholder="e.g. First time at the park!"
-              placeholderTextColor={C.textLight}
-            />
+                <Text style={styles.fieldLabel}>Date (MM-DD-YYYY)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newPhotoDate}
+                  onChangeText={setNewPhotoDate}
+                  placeholder="06-15-2024"
+                  placeholderTextColor={C.textLight}
+                />
 
-            <View style={styles.modalBtns}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnCancel]}
-                onPress={() => {
-                  setPhotoModalVisible(false);
-                  setNewPhotoUri(null);
-                }}
-              >
-                <Text style={styles.modalBtnCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnSave]}
-                onPress={handleSavePhoto}
-              >
-                <Text style={styles.modalBtnSaveText}>Save</Text>
-              </TouchableOpacity>
+                <Text style={styles.fieldLabel}>Caption (optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newCaption}
+                  onChangeText={setNewCaption}
+                  placeholder="e.g. First time at the park!"
+                  placeholderTextColor={C.textLight}
+                />
+
+                <View style={styles.modalBtns}>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnCancel]}
+                    onPress={() => {
+                      setPhotoModalVisible(false);
+                      setNewPhotoUri(null);
+                    }}
+                  >
+                    <Text style={styles.modalBtnCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnSave]}
+                    onPress={handleSavePhoto}
+                  >
+                    <Text style={styles.modalBtnSaveText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── ADD MEASUREMENT MODAL ── */}
       <Modal visible={measureModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>📏 Log Measurement</Text>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>📏 Log Measurement</Text>
 
-            <Text style={styles.fieldLabel}>Date (MM-DD-YYYY)</Text>
-            <TextInput
-              style={styles.input}
-              value={newMeasureDate}
-              onChangeText={setNewMeasureDate}
-              placeholder="06-15-2024"
-              placeholderTextColor={C.textLight}
-            />
-
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Weight (lbs)</Text>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 8 }}
+              >
+                <Text style={styles.fieldLabel}>Date (MM-DD-YYYY)</Text>
                 <TextInput
                   style={styles.input}
-                  value={newWeight}
-                  onChangeText={setNewWeight}
-                  placeholder="e.g. 14"
+                  value={newMeasureDate}
+                  onChangeText={setNewMeasureDate}
+                  placeholder="06-15-2024"
+                  placeholderTextColor={C.textLight}
+                />
+
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Weight (lbs)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={newWeight}
+                      onChangeText={setNewWeight}
+                      placeholder="e.g. 14"
+                      keyboardType="decimal-pad"
+                      placeholderTextColor={C.textLight}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Ounces (oz)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={newWeightOz || ''}
+                      onChangeText={setNewWeightOz}
+                      placeholder="e.g. 5"
+                      keyboardType="decimal-pad"
+                      placeholderTextColor={C.textLight}
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.fieldLabel}>Height (inches)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newHeight}
+                  onChangeText={setNewHeight}
+                  placeholder="e.g. 24"
                   keyboardType="decimal-pad"
                   placeholderTextColor={C.textLight}
                 />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Ounces (oz)</Text>
+
+                <Text style={styles.fieldLabel}>Notes (optional)</Text>
                 <TextInput
                   style={styles.input}
-                  value={newWeightOz || ''}
-                  onChangeText={setNewWeightOz}
-                  placeholder="e.g. 5"
-                  keyboardType="decimal-pad"
+                  value={newMeasureNote}
+                  onChangeText={setNewMeasureNote}
+                  placeholder="e.g. Doctor's visit"
                   placeholderTextColor={C.textLight}
                 />
-              </View>
-            </View>
 
-            <Text style={styles.fieldLabel}>Height (inches)</Text>
-            <TextInput
-              style={styles.input}
-              value={newHeight}
-              onChangeText={setNewHeight}
-              placeholder="e.g. 24"
-              keyboardType="decimal-pad"
-              placeholderTextColor={C.textLight}
-            />
-
-            <Text style={styles.fieldLabel}>Notes (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={newMeasureNote}
-              onChangeText={setNewMeasureNote}
-              placeholder="e.g. Doctor's visit"
-              placeholderTextColor={C.textLight}
-            />
-
-            <View style={styles.modalBtns}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnCancel]}
-                onPress={() => setMeasureModalVisible(false)}
-              >
-                <Text style={styles.modalBtnCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnSave]}
-                onPress={handleSaveMeasurement}
-              >
-                <Text style={styles.modalBtnSaveText}>Save</Text>
-              </TouchableOpacity>
+                <View style={styles.modalBtns}>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnCancel]}
+                    onPress={() => setMeasureModalVisible(false)}
+                  >
+                    <Text style={styles.modalBtnCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnSave]}
+                    onPress={handleSaveMeasurement}
+                  >
+                    <Text style={styles.modalBtnSaveText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── VIEW PHOTO MODAL ── */}

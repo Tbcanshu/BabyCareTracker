@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Text, View, Image, Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS as DEFAULT_COLORS, FONTS, setGlobalTheme } from "./src/theme";
 import { getBabyProfile } from "./src/storage";
 
@@ -15,6 +16,8 @@ import GrowthScreen from "./src/screens/GrowthScreen";
 import RemindersScreen from "./src/screens/RemindersScreen";
 import AuthScreen from "./src/screens/AuthScreen";
 import ChatScreen from "./src/screens/ChatScreen";
+import SplashScreen from "./src/screens/SplashScreen";
+import RoleSelectionScreen from "./src/screens/RoleSelectionScreen";
 
 
 import { AuthContext } from "./src/context/AuthContext";
@@ -62,8 +65,8 @@ const HomeTabs = ({ route }) => {
           borderTopWidth: 1,
           borderTopColor: colors.border,
           paddingTop: 8,
-          height: Platform.OS === 'ios' ? 90 : 72,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+          height: Platform.OS === 'ios' ? 100 : 80,
+          paddingBottom: Platform.OS === 'ios' ? 32 : 18,
         },
         tabBarActiveTintColor: colors.primaryDark,
         tabBarInactiveTintColor: colors.textLight,
@@ -91,29 +94,58 @@ const AppNavigator = () => {
 
   useEffect(() => {
     const initApp = async () => {
-      setIsLoggedIn(true);
-      const profile = await getBabyProfile();
-      if (profile && profile.gender) {
-        setGender(profile.gender);
-        setGlobalTheme(profile.gender);
+      try {
+        // Check for existing auth token OR guest mode flag
+        const token = await AsyncStorage.getItem('auth_token');
+        const isGuest = await AsyncStorage.getItem('guest_mode');
+        
+        if (token || isGuest === 'true') {
+          // Already logged in or in guest mode — go straight to app
+          setIsLoggedIn(true);
+        }
+        // else: isLoggedIn stays false → shows Splash → RoleSelection flow
+
+        const profile = await getBabyProfile();
+        if (profile && profile.gender) {
+          setGender(profile.gender);
+          setGlobalTheme(profile.gender);
+        }
+      } catch (e) {
+        console.warn('initApp error:', e);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     initApp();
   }, []);
 
   const authContext = useMemo(() => ({
-    logout: () => setIsLoggedIn(false),
+    logout: async () => {
+      await AsyncStorage.removeItem('guest_mode');
+      setIsLoggedIn(false);
+    },
     updateGender: (newGender) => {
       setGender(newGender);
       setGlobalTheme(newGender);
+    },
+    setGuestMode: async () => {
+      await AsyncStorage.setItem('guest_mode', 'true');
+      setIsLoggedIn(true);
     },
   }), []);
 
   const colors = DEFAULT_COLORS;
 
   if (isLoading) {
-    return <View style={{flex: 1, backgroundColor: colors.background}} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: '#FFFAF8', alignItems: 'center', justifyContent: 'center' }}>
+        <Image
+          source={require('./assets/babybloom_logo.png')}
+          style={{ width: 220, height: 220 }}
+          resizeMode="contain"
+        />
+      </View>
+    );
   }
 
   return (
@@ -139,9 +171,23 @@ const AppNavigator = () => {
         }}
       >
         {!isLoggedIn ? (
-          <Stack.Screen name="Auth" options={{ headerShown: false }}>
-            {(props) => <AuthScreen {...props} setIsLoggedIn={setIsLoggedIn} />}
-          </Stack.Screen>
+          <>
+            <Stack.Screen
+              name="Splash"
+              options={{ headerShown: false }}
+            >
+              {(props) => <SplashScreen {...props} />}
+            </Stack.Screen>
+            <Stack.Screen
+              name="RoleSelection"
+              options={{ headerShown: false }}
+            >
+              {(props) => <RoleSelectionScreen {...props} setIsLoggedIn={setIsLoggedIn} />}
+            </Stack.Screen>
+            <Stack.Screen name="Auth" options={{ headerShown: false }}>
+              {(props) => <AuthScreen {...props} setIsLoggedIn={setIsLoggedIn} />}
+            </Stack.Screen>
+          </>
         ) : (
           <>
             <Stack.Screen

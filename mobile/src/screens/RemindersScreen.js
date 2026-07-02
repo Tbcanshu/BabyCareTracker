@@ -10,6 +10,7 @@ import {
   Switch,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -335,162 +336,176 @@ const RemindersScreen = () => {
 
       {/* ── ADD REMINDER MODAL ── */}
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>🔔 New Reminder</Text>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>🔔 New Reminder</Text>
 
-            {/* Activity Picker */}
-            <Text style={styles.fieldLabel}>Activity</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.activityScroll}
-            >
-              {ACTIVITIES.map((act) => (
-                <TouchableOpacity
-                  key={act.key}
-                  onPress={() => {
-                    setSelectedActivity(act);
-                    setIntervalHours(String(act.defaultInterval));
-                    if (!customMessage) setCustomMessage(act.defaultMsg);
-                    if (act.key === "vaccine") setReminderType("time");
-                  }}
-                  style={[
-                    styles.activityChip,
-                    selectedActivity.key === act.key && {
-                      backgroundColor: act.lightBg,
-                      borderColor: act.color,
-                    },
-                  ]}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 8 }}
+              >
+                {/* Activity Picker */}
+                <Text style={styles.fieldLabel}>Activity</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.activityScroll}
+                  nestedScrollEnabled
                 >
-                  <Text style={styles.activityChipEmoji}>{act.emoji}</Text>
-                  <Text
+                  {ACTIVITIES.map((act) => (
+                    <TouchableOpacity
+                      key={act.key}
+                      onPress={() => {
+                        setSelectedActivity(act);
+                        setIntervalHours(String(act.defaultInterval));
+                        // Always update the message to match the newly selected activity
+                        setCustomMessage(act.defaultMsg);
+                        if (act.key === "vaccine") setReminderType("time");
+                        else setReminderType("interval");
+                      }}
+                      style={[
+                        styles.activityChip,
+                        selectedActivity.key === act.key && {
+                          backgroundColor: act.lightBg,
+                          borderColor: act.color,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.activityChipEmoji}>{act.emoji}</Text>
+                      <Text
+                        style={[
+                          styles.activityChipLabel,
+                          selectedActivity.key === act.key && { color: act.color },
+                        ]}
+                      >
+                        {act.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {/* Reminder Type Toggle */}
+                <Text style={styles.fieldLabel}>Reminder Type</Text>
+                <View style={styles.typeToggle}>
+                  <TouchableOpacity
                     style={[
-                      styles.activityChipLabel,
-                      selectedActivity.key === act.key && { color: act.color },
+                      styles.typeBtn,
+                      reminderType === "interval" && styles.typeBtnActive,
                     ]}
+                    onPress={() => setReminderType("interval")}
                   >
-                    {act.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Reminder Type Toggle */}
-            <Text style={styles.fieldLabel}>Reminder Type</Text>
-            <View style={styles.typeToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.typeBtn,
-                  reminderType === "interval" && styles.typeBtnActive,
-                ]}
-                onPress={() => setReminderType("interval")}
-              >
-                <Text
-                  style={[
-                    styles.typeBtnText,
-                    reminderType === "interval" && styles.typeBtnTextActive,
-                  ]}
-                >
-                  🔁 Repeat Every
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.typeBtn,
-                  reminderType === "time" && styles.typeBtnActive,
-                ]}
-                onPress={() => setReminderType("time")}
-              >
-                <Text
-                  style={[
-                    styles.typeBtnText,
-                    reminderType === "time" && styles.typeBtnTextActive,
-                  ]}
-                >
-                  🕐 Daily at Time
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Interval Input */}
-            {reminderType === "interval" && (
-              <View style={styles.intervalRow}>
-                <Text style={styles.intervalLabel}>Every</Text>
-                <TextInput
-                  style={styles.intervalInput}
-                  value={intervalHours}
-                  onChangeText={setIntervalHours}
-                  keyboardType="numeric"
-                  maxLength={3}
-                />
-                <TouchableOpacity 
-                  onPress={() => setIntervalUnit(intervalUnit === "hours" ? "minutes" : "hours")}
-                  style={styles.unitToggleBtn}
-                >
-                  <Text style={styles.unitToggleBtnText}>{intervalUnit}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Time Input */}
-            {reminderType === "time" && (
-              <>
-                <Text style={styles.fieldLabel}>
-                  Time (HH:MM — 24hr format)
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  value={customTime}
-                  onChangeText={setCustomTime}
-                  placeholder="e.g. 08:00 or 14:30"
-                  placeholderTextColor={C.textLight}
-                  keyboardType="numbers-and-punctuation"
-                />
-                {selectedActivity.key === "vaccine" && (
-                  <View style={styles.vaccineNote}>
-                    <Text style={styles.vaccineNoteText}>
-                      💉 Tip: Set the appointment time. You'll get a daily
-                      reminder at this time — turn it off after the visit.
+                    <Text
+                      style={[
+                        styles.typeBtnText,
+                        reminderType === "interval" && styles.typeBtnTextActive,
+                      ]}
+                    >
+                      🔁 Repeat Every
                     </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeBtn,
+                      reminderType === "time" && styles.typeBtnActive,
+                    ]}
+                    onPress={() => setReminderType("time")}
+                  >
+                    <Text
+                      style={[
+                        styles.typeBtnText,
+                        reminderType === "time" && styles.typeBtnTextActive,
+                      ]}
+                    >
+                      🕐 Daily at Time
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Interval Input */}
+                {reminderType === "interval" && (
+                  <View style={styles.intervalRow}>
+                    <Text style={styles.intervalLabel}>Every</Text>
+                    <TextInput
+                      style={styles.intervalInput}
+                      value={intervalHours}
+                      onChangeText={setIntervalHours}
+                      keyboardType="numeric"
+                      maxLength={3}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setIntervalUnit(intervalUnit === "hours" ? "minutes" : "hours")}
+                      style={styles.unitToggleBtn}
+                    >
+                      <Text style={styles.unitToggleBtnText}>{intervalUnit}</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
-              </>
-            )}
 
-            {/* Custom Message */}
-            <Text style={styles.fieldLabel}>Notification Message</Text>
-            <TextInput
-              style={styles.input}
-              value={customMessage}
-              onChangeText={setCustomMessage}
-              placeholder={selectedActivity.defaultMsg}
-              placeholderTextColor={C.textLight}
-            />
+                {/* Time Input */}
+                {reminderType === "time" && (
+                  <>
+                    <Text style={styles.fieldLabel}>
+                      Time (HH:MM — 24hr format)
+                    </Text>
+                    <TextInput
+                      style={styles.input}
+                      value={customTime}
+                      onChangeText={setCustomTime}
+                      placeholder="e.g. 08:00 or 14:30"
+                      placeholderTextColor={C.textLight}
+                      keyboardType="numbers-and-punctuation"
+                    />
+                    {selectedActivity.key === "vaccine" && (
+                      <View style={styles.vaccineNote}>
+                        <Text style={styles.vaccineNoteText}>
+                          💉 Tip: Set the appointment time. You'll get a daily
+                          reminder at this time — turn it off after the visit.
+                        </Text>
+                      </View>
+                    )}
+                  </>
+                )}
 
-            {/* Buttons */}
-            <View style={styles.modalBtns}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnCancel]}
-                onPress={() => {
-                  setModalVisible(false);
-                  resetForm();
-                }}
-              >
-                <Text style={styles.modalBtnCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalBtn,
-                  { backgroundColor: selectedActivity.color },
-                ]}
-                onPress={handleAdd}
-              >
-                <Text style={styles.modalBtnSaveText}>Set Reminder</Text>
-              </TouchableOpacity>
+                {/* Custom Message */}
+                <Text style={styles.fieldLabel}>Notification Message</Text>
+                <TextInput
+                  style={styles.input}
+                  value={customMessage}
+                  onChangeText={setCustomMessage}
+                  placeholder={selectedActivity.defaultMsg}
+                  placeholderTextColor={C.textLight}
+                />
+
+                {/* Buttons */}
+                <View style={styles.modalBtns}>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnCancel]}
+                    onPress={() => {
+                      setModalVisible(false);
+                      resetForm();
+                    }}
+                  >
+                    <Text style={styles.modalBtnCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.modalBtn,
+                      { backgroundColor: selectedActivity.color },
+                    ]}
+                    onPress={handleAdd}
+                  >
+                    <Text style={styles.modalBtnSaveText}>Set Reminder</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

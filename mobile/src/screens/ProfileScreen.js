@@ -5,13 +5,17 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  Switch,
+  TouchableOpacity,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../theme';
-import { getBabyProfile, saveBabyProfile, clearAllData } from '../storage';
-import { Button, Input, Card, Divider } from '../components/UI';
+import { getBabyProfile, saveBabyProfile } from '../storage';
+import { Button, Input } from '../components/UI';
 import { authApi, clearAuthToken } from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -20,6 +24,7 @@ const ProfileScreen = ({ navigation }) => {
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
+  const [photoUri, setPhotoUri] = useState(null);
   const [saved, setSaved] = useState(false);
   const authContext = React.useContext(AuthContext);
 
@@ -30,6 +35,7 @@ const ProfileScreen = ({ navigation }) => {
       setDob(profile.dob || '');
       setGender(profile.gender || '');
       setWeight(profile.weight || '');
+      setPhotoUri(profile.photoUri || null);
     }
   };
 
@@ -39,8 +45,25 @@ const ProfileScreen = ({ navigation }) => {
     }, [])
   );
 
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Needed', 'Please allow access to your photo library to add a baby photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
+
   const handleSave = async () => {
-    const profile = { name, dob, gender, weight };
+    const profile = { name, dob, gender, weight, photoUri };
     const ok = await saveBabyProfile(profile);
     if (ok) {
       setSaved(true);
@@ -49,28 +72,6 @@ const ProfileScreen = ({ navigation }) => {
       }
       setTimeout(() => setSaved(false), 2000);
     }
-  };
-
-  const handleClearData = () => {
-    Alert.alert(
-      '⚠️ Clear All Data',
-      'This will permanently delete ALL entries and the baby profile. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Everything',
-          style: 'destructive',
-          onPress: async () => {
-            await clearAllData();
-            setName('');
-            setDob('');
-            setGender('');
-            setWeight('');
-            Alert.alert('Done', 'All data has been cleared.');
-          },
-        },
-      ]
-    );
   };
 
   const ageDisplay = () => {
@@ -91,133 +92,112 @@ const ProfileScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.md }]}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 80}
     >
-      {/* Avatar */}
-      <View style={styles.avatarSection}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarEmoji}>
-            {gender === 'Girl' ? '👧' : gender === 'Boy' ? '👦' : '👶'}
-          </Text>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.md }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Avatar / Photo */}
+        <View style={styles.avatarSection}>
+          <TouchableOpacity onPress={handlePickPhoto} style={styles.avatarWrapper} activeOpacity={0.85}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.avatarPhoto} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarEmoji}>
+                  {gender === 'Girl' ? '👧' : gender === 'Boy' ? '👦' : '👶'}
+                </Text>
+              </View>
+            )}
+            <View style={styles.cameraOverlay}>
+              <Text style={styles.cameraIcon}>📷</Text>
+            </View>
+          </TouchableOpacity>
+          {name ? <Text style={styles.avatarName}>{name}</Text> : null}
+          {ageDisplay() ? (
+            <Text style={styles.avatarAge}>{ageDisplay()}</Text>
+          ) : null}
+          <Text style={styles.tapHint}>Tap to change photo</Text>
         </View>
-        {name ? <Text style={styles.avatarName}>{name}</Text> : null}
-        {ageDisplay() ? (
-          <Text style={styles.avatarAge}>{ageDisplay()}</Text>
-        ) : null}
-      </View>
 
-      {/* Profile Form */}
-      <Card style={styles.card}>
-        <Text style={styles.cardTitle}>Baby Profile</Text>
-        <Input
-          label="Baby's Name"
-          value={name}
-          onChangeText={setName}
-          placeholder="e.g. Aria"
-        />
-        <Input
-          label="Date of Birth (YYYY-MM-DD)"
-          value={dob}
-          onChangeText={setDob}
-          placeholder="e.g. 2024-06-15"
-          keyboardType="numbers-and-punctuation"
-        />
-        <Input
-          label="Birth Weight (kg)"
-          value={weight}
-          onChangeText={setWeight}
-          placeholder="e.g. 3.2"
-          keyboardType="decimal-pad"
-        />
+        {/* Profile Form */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Baby Profile</Text>
+          <Input
+            label="Baby's Name"
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g. Aria"
+          />
+          <Input
+            label="Date of Birth (YYYY-MM-DD)"
+            value={dob}
+            onChangeText={setDob}
+            placeholder="e.g. 2024-06-15"
+            keyboardType="numbers-and-punctuation"
+          />
+          <Input
+            label="Birth Weight (kg)"
+            value={weight}
+            onChangeText={setWeight}
+            placeholder="e.g. 3.2"
+            keyboardType="decimal-pad"
+          />
 
-        <Text style={styles.inputLabel}>Gender</Text>
-        <View style={styles.genderRow}>
-          {['Boy', 'Girl', 'Other'].map((g) => (
-            <View
-              key={g}
-              style={[
-                styles.genderChip,
-                gender === g && styles.genderChipActive,
-              ]}
-            >
-              <Text
-                onPress={() => setGender(g)}
+          <Text style={styles.inputLabel}>Gender</Text>
+          <View style={styles.genderRow}>
+            {['Boy', 'Girl', 'Other'].map((g) => (
+              <View
+                key={g}
                 style={[
-                  styles.genderText,
-                  gender === g && styles.genderTextActive,
+                  styles.genderChip,
+                  gender === g && styles.genderChipActive,
                 ]}
               >
-                {g === 'Boy' ? '👦 ' : g === 'Girl' ? '👧 ' : '🧒 '}
-                {g}
-              </Text>
-            </View>
-          ))}
+                <Text
+                  onPress={() => setGender(g)}
+                  style={[
+                    styles.genderText,
+                    gender === g && styles.genderTextActive,
+                  ]}
+                >
+                  {g === 'Boy' ? '👦 ' : g === 'Girl' ? '👧 ' : '🧒 '}
+                  {g}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <Button
+            title={saved ? '✅ Profile Saved!' : 'Save Profile'}
+            onPress={handleSave}
+            style={{ marginTop: SPACING.md }}
+          />
         </View>
 
-        <Button
-          title={saved ? '✅ Profile Saved!' : 'Save Profile'}
-          onPress={handleSave}
-          style={{ marginTop: SPACING.md }}
-        />
-      </Card>
-
-      {/* App Info */}
-      <Card style={styles.card}>
-        <Text style={styles.cardTitle}>About</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>App</Text>
-          <Text style={styles.infoValue}>Baby Care Tracker</Text>
+        {/* Account */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Account</Text>
+          <Button
+            title="Logout"
+            onPress={async () => {
+              try {
+                await authApi.logout();
+              } catch(e) {}
+              await clearAuthToken();
+              if (authContext) authContext.logout();
+            }}
+            style={{ marginTop: SPACING.sm }}
+          />
         </View>
-        <Divider />
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Version</Text>
-          <Text style={styles.infoValue}>1.0.0</Text>
-        </View>
-        <Divider />
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Storage</Text>
-          <Text style={styles.infoValue}>Local (AsyncStorage)</Text>
-        </View>
-        <Divider />
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Data Privacy</Text>
-          <Text style={styles.infoValue}>100% on-device 🔒</Text>
-        </View>
-      </Card>
-
-      {/* Auth Zone */}
-      <Card style={styles.card}>
-        <Text style={styles.cardTitle}>Account</Text>
-        <Button
-          title="Logout"
-          onPress={async () => {
-            try {
-              await authApi.logout();
-            } catch(e) {}
-            await clearAuthToken();
-            if (authContext) authContext.logout();
-          }}
-          style={{ marginTop: SPACING.sm }}
-        />
-      </Card>
-
-      {/* Danger Zone */}
-      <Card style={[styles.card, styles.dangerCard]}>
-        <Text style={styles.dangerTitle}>⚠️ Danger Zone</Text>
-        <Text style={styles.dangerDescription}>
-          Permanently delete all entries and profile data. This action cannot be undone.
-        </Text>
-        <Button
-          title="Clear All Data"
-          onPress={handleClearData}
-          variant="danger"
-          style={{ marginTop: SPACING.sm }}
-        />
-      </Card>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -225,17 +205,40 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: SPACING.md, paddingBottom: SPACING.xxl },
   avatarSection: { alignItems: 'center', marginBottom: SPACING.lg, paddingTop: SPACING.sm },
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: SPACING.sm,
+  },
   avatar: {
-    width: 90,
-    height: 90,
+    width: 100,
+    height: 100,
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.md,
-    marginBottom: SPACING.sm,
   },
-  avatarEmoji: { fontSize: 48 },
+  avatarPhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: RADIUS.full,
+    ...SHADOWS.md,
+  },
+  avatarEmoji: { fontSize: 52 },
+  cameraOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  cameraIcon: { fontSize: 14 },
   avatarName: {
     fontSize: FONTS.sizes.xl,
     fontWeight: '800',
@@ -246,7 +249,18 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 4,
   },
-  card: { marginBottom: SPACING.md },
+  tapHint: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.textLight,
+    marginTop: 4,
+  },
+  card: {
+    marginBottom: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    ...SHADOWS.sm,
+  },
   cardTitle: {
     fontSize: FONTS.sizes.lg,
     fontWeight: '700',
@@ -279,30 +293,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   genderTextActive: { color: COLORS.primaryDark },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  infoLabel: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  infoValue: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.textPrimary },
-  dangerCard: {
-    borderWidth: 1,
-    borderColor: COLORS.error + '44',
-    backgroundColor: '#FFF5F5',
-  },
-  dangerTitle: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: '700',
-    color: COLORS.error,
-    marginBottom: SPACING.sm,
-  },
-  dangerDescription: {
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-  },
 });
 
 export default ProfileScreen;
