@@ -5,7 +5,8 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { Text, View, Image, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS as DEFAULT_COLORS, FONTS, setGlobalTheme } from "./src/theme";
-import { getBabyProfile } from "./src/storage";
+import { getBabyProfile, clearAllData } from "./src/storage";
+import { cancelAllNotifications } from "./src/storage/remindersStorage";
 
 import HomeScreen from "./src/screens/HomeScreen";
 import HistoryScreen from "./src/screens/HistoryScreen";
@@ -121,7 +122,17 @@ const AppNavigator = () => {
 
   const authContext = useMemo(() => ({
     logout: async () => {
-      await AsyncStorage.removeItem('guest_mode');
+      try {
+        await AsyncStorage.removeItem('guest_mode');
+        await AsyncStorage.removeItem('auth_token');
+        await clearAllData();
+        await cancelAllNotifications();
+        await AsyncStorage.removeItem('baby_reminders');
+      } catch (err) {
+        console.warn("Logout cleanup error:", err);
+      }
+      setGender(null);
+      setGlobalTheme(null);
       setIsLoggedIn(false);
     },
     updateGender: (newGender) => {

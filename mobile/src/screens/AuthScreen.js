@@ -46,20 +46,13 @@ const AuthScreen = ({ navigation, setIsLoggedIn, route }) => {
 
     setLoading(true);
     try {
-      // ── TEMPORARY: No backend yet ──────────────────────────────────────────
-      // Accept any credentials and create a local session.
-      // TODO: Replace this block with real API call once backend is ready:
-      //
-      //   let data;
-      //   if (isLogin) {
-      //     data = await authApi.login(email, password);
-      //   } else {
-      //     data = await authApi.register(name, email, password);
-      //   }
-      //   await setAuthToken(data.token);
-      //
-      // ──────────────────────────────────────────────────────────────────────
-      await setAuthToken('local_dev_token_' + Date.now());
+      let data;
+      if (isLogin) {
+        data = await authApi.login(email, password);
+      } else {
+        data = await authApi.register(name, email, password);
+      }
+      await setAuthToken(data.token);
       setIsLoggedIn(true);
     } catch (error) {
       Alert.alert('Error', error.message);

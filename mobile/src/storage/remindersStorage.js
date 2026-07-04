@@ -1,6 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { Platform, NativeModules } from "react-native";
+
+const { AlarmModule } = NativeModules;
 
 const KEYS = {
   REMINDERS: "baby_reminders",
@@ -54,6 +56,9 @@ export const requestNotificationPermissions = async () => {
 export const scheduleNotification = async (reminder) => {
   try {
     let trigger;
+    let safeSeconds = 0;
+    let hour = 0;
+    let minute = 0;
 
     if (reminder.type === "interval") {
       // intervalHours is stored as a decimal (e.g. 0.5 = 30 min, 3 = 3 hours)
@@ -62,7 +67,7 @@ export const scheduleNotification = async (reminder) => {
         isNaN(rawHours) || rawHours <= 0 ? 3600 : Math.round(rawHours * 3600);
       // expo-notifications minimum interval is 1 second (no 15-min floor needed
       // for one-shot triggers — only for repeating ones on iOS, handled below)
-      const safeSeconds = Math.max(60, totalSeconds);
+      safeSeconds = Math.max(60, totalSeconds);
 
       trigger = {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -71,7 +76,9 @@ export const scheduleNotification = async (reminder) => {
       };
     } else {
       // Daily trigger at a specific time
-      const [hour, minute] = (reminder.time || "08:00").split(":").map(Number);
+      const parts = (reminder.time || "08:00").split(":").map(Number);
+      hour = parts[0];
+      minute = parts[1];
 
       trigger = {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -96,6 +103,25 @@ export const scheduleNotification = async (reminder) => {
       trigger,
     });
 
+    // Schedule native alarm manager for background/locked screen wakeup
+    if (Platform.OS === "android" && AlarmModule) {
+      const title = (reminder.emoji || "⏰") + " " + (reminder.label || "Reminder");
+      const body = reminder.message || "Time for " + (reminder.label || "reminder") + "!";
+      try {
+        await AlarmModule.scheduleAlarm(
+          reminder.id,
+          reminder.type,
+          safeSeconds,
+          hour,
+          minute,
+          title,
+          body
+        );
+      } catch (err) {
+        console.warn("Native scheduleAlarm error:", err);
+      }
+    }
+
     return notifId;
   } catch (e) {
     console.error("scheduleNotification error:", e);
@@ -115,6 +141,14 @@ export const cancelNotification = async (notifId) => {
 export const cancelAllNotifications = async () => {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
+    const reminders = await getAllReminders();
+    if (Platform.OS === "android" && AlarmModule) {
+      for (const r of reminders) {
+        try {
+          await AlarmModule.cancelAlarm(r.id);
+        } catch (err) {}
+      }
+    }
   } catch (e) {}
 };
 
@@ -154,6 +188,11 @@ export const toggleReminder = async (id) => {
         if (r.id !== id) return r;
         if (r.active) {
           if (r.notifId) await cancelNotification(r.notifId);
+          if (Platform.OS === "android" && AlarmModule) {
+            try {
+              await AlarmModule.cancelAlarm(r.id);
+            } catch (err) {}
+          }
           return { ...r, active: false, notifId: null };
         } else {
           const notifId = await scheduleNotification(r);
@@ -173,6 +212,11 @@ export const deleteReminder = async (id) => {
     const reminders = await getAllReminders();
     const reminder = reminders.find((r) => r.id === id);
     if (reminder?.notifId) await cancelNotification(reminder.notifId);
+    if (Platform.OS === "android" && AlarmModule) {
+      try {
+        await AlarmModule.cancelAlarm(id);
+      } catch (err) {}
+    }
     const updated = reminders.filter((r) => r.id !== id);
     await AsyncStorage.setItem(KEYS.REMINDERS, JSON.stringify(updated));
     return updated;

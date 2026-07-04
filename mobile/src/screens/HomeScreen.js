@@ -75,7 +75,7 @@ const HomeScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello 👋</Text>
+          <Text style={styles.greeting}>Hello</Text>
           <Text style={styles.babyName}>{babyName}'s Day</Text>
           <Text style={styles.date}>{todayStr}</Text>
         </View>
@@ -104,13 +104,13 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.aiBannerSubtitle}>Get instant answers about feeding, sleep safety, & care tailored for {babyName}</Text>
         </View>
         <View style={styles.aiBannerIcon}>
-          <Text style={styles.aiBannerEmoji}>🤖</Text>
+          <Text style={styles.aiBannerEmoji}>✨</Text>
         </View>
       </TouchableOpacity>
 
       {/* Quick Add */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Add</Text>
+        <Text style={styles.sectionTitle}>Activities</Text>
         <View style={styles.taskGrid}>
           {Object.entries(TASK_CONFIG).map(([key, config]) => (
             <TaskButton

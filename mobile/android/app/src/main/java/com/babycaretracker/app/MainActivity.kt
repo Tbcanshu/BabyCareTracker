@@ -4,6 +4,7 @@ import expo.modules.splashscreen.SplashScreenManager
 import android.os.Build
 import android.os.Bundle
 
+import android.content.Intent
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -21,6 +22,21 @@ class MainActivity : ReactActivity() {
     SplashScreenManager.registerOnActivity(this)
     // @generated end expo-splashscreen
     super.onCreate(null)
+    handleIntent(intent)
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    handleIntent(intent)
+  }
+
+  private fun handleIntent(intent: Intent?) {
+    if (intent != null && intent.getBooleanExtra("alarmTriggered", false)) {
+      val title = intent.getStringExtra("alarmTitle")
+      val body = intent.getStringExtra("alarmBody")
+      AlarmModule.onAlarmTriggered(title, body)
+    }
   }
 
   /**

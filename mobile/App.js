@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Alert, DeviceEventEmitter, NativeModules, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
@@ -10,6 +10,8 @@ import {
   setupNotifications,
   requestNotificationPermissions,
 } from "./src/storage/remindersStorage";
+
+const { AlarmModule } = NativeModules;
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -28,6 +30,32 @@ export default function App() {
       try {
         await setupNotifications();
         await requestNotificationPermissions();
+
+        // Check if there is a pending alarm that launched this app
+        if (Platform.OS === 'android' && AlarmModule) {
+          const pending = await AlarmModule.getPendingAlarm();
+          if (pending) {
+            setAlarmTitle(pending.title || "⏰ Alarm!");
+            setAlarmBody(pending.body || "Time to check on your baby!");
+            setAlarmVisible(true);
+          }
+
+          // Check/Request overlay permission
+          const hasOverlay = await AlarmModule.checkOverlayPermission();
+          if (!hasOverlay) {
+            Alert.alert(
+              "Display Over Other Apps",
+              "BabyBloom needs 'Display over other apps' permission to show full-screen alarms even when you are using other apps or your screen is off. Please enable it in the next screen.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Enable",
+                  onPress: () => AlarmModule.requestOverlayPermission(),
+                },
+              ]
+            );
+          }
+        }
       } catch (e) {
         console.log("App init error:", e);
       } finally {
@@ -56,6 +84,16 @@ export default function App() {
         setAlarmVisible(true);
       });
 
+    // ── Native Alarm trigger listener ─────────────────────────────────────────
+    const alarmSubscription = DeviceEventEmitter.addListener(
+      "onAlarmTriggered",
+      (event) => {
+        setAlarmTitle(event.title || "⏰ Alarm!");
+        setAlarmBody(event.body || "Time to check on your baby!");
+        setAlarmVisible(true);
+      }
+    );
+
     return () => {
       if (notifReceivedRef.current) {
         Notifications.removeNotificationSubscription(
@@ -67,6 +105,7 @@ export default function App() {
           notifResponseRef.current
         );
       }
+      alarmSubscription.remove();
     };
   }, []);
 

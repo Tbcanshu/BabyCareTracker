@@ -32,15 +32,6 @@ const C = {
 
 const ROLES = [
   {
-    key: 'parent',
-    emoji: '👨‍👩‍👧',
-    title: 'Primary Caregiver',
-    subtitle: 'Set up your baby\'s profile and manage everything from one place.',
-    bg: C.greenLight,
-    accent: C.green,
-    arrowBg: C.green,
-  },
-  {
     key: 'family',
     emoji: '👪',
     title: 'Family Member',
@@ -48,6 +39,15 @@ const ROLES = [
     bg: C.peachLight,
     accent: C.peach,
     arrowBg: C.peach,
+  },
+  {
+    key: 'parent',
+    emoji: '👨‍👩‍👧',
+    title: 'Primary Caregiver',
+    subtitle: 'Set up your baby\'s profile and manage everything from one place.',
+    bg: C.greenLight,
+    accent: C.green,
+    arrowBg: C.green,
   },
   {
     key: 'guest',

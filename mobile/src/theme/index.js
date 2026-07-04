@@ -65,6 +65,17 @@ export const setGlobalTheme = (gender) => {
       textSecondary: "#7A5F85",
       border: "#F0E0F0",
     });
+  } else {
+    Object.assign(COLORS, {
+      primary: "#D0D0D0",
+      primaryDark: "#A0A0A0",
+      primaryLight: "#F0F0F0",
+      background: "#FFFFFF",
+      surfaceAlt: "#F8F8F8",
+      textPrimary: "#3A2140",
+      textSecondary: "#7A5F85",
+      border: "#F0E0F0",
+    });
   }
 };
 
