@@ -11,7 +11,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS, TASK_CONFIG } from '../theme';
-import { getTodayStats, getBabyProfile } from '../storage';
+import { getTodayStats, getBabyProfile, getCurrentUser } from '../storage';
 import { formatDuration, formatDateFull } from '../utils/helpers';
 import { StatBadge, EmptyState } from '../components/UI';
 import EntryCard from '../components/EntryCard';
@@ -23,6 +23,7 @@ const HomeScreen = ({ navigation }) => {
   const [babyName, setBabyName] = useState('Baby');
   const [babyPhoto, setBabyPhoto] = useState(null);
   const [babyGender, setBabyGender] = useState('');
+  const [parentName, setParentName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = async () => {
@@ -30,6 +31,9 @@ const HomeScreen = ({ navigation }) => {
     if (profile?.name) setBabyName(profile.name);
     if (profile?.photoUri) setBabyPhoto(profile.photoUri);
     if (profile?.gender) setBabyGender(profile.gender);
+
+    const user = await getCurrentUser();
+    setParentName(user?.name || '');
 
     const result = await getTodayStats();
     setStats(result.stats);
@@ -75,7 +79,7 @@ const HomeScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello</Text>
+          <Text style={styles.greeting}>{parentName ? `Hello, ${parentName}` : 'Hello'}</Text>
           <Text style={styles.babyName}>{babyName}'s Day</Text>
           <Text style={styles.date}>{todayStr}</Text>
         </View>
@@ -199,6 +203,9 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.md,
     paddingBottom: SPACING.xxl,
+    width: '100%',
+    maxWidth: 700,
+    alignSelf: 'center',
   },
   header: {
     flexDirection: 'row',

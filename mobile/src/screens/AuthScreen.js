@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS } from '../theme';
 import { authApi, setAuthToken } from '../utils/api';
+import { saveCurrentUser } from '../storage';
 
 const C = {
   bg: '#FFFAF8',
@@ -53,6 +54,7 @@ const AuthScreen = ({ navigation, setIsLoggedIn, route }) => {
         data = await authApi.register(name, email, password);
       }
       await setAuthToken(data.token);
+      if (data.user) await saveCurrentUser(data.user);
       setIsLoggedIn(true);
     } catch (error) {
       Alert.alert('Error', error.message);
@@ -153,7 +155,7 @@ const AuthScreen = ({ navigation, setIsLoggedIn, route }) => {
               <ActivityIndicator color={C.white} />
             ) : (
               <Text style={styles.submitBtnText}>
-                {isLogin ? 'Sign In 🌸' : 'Create Account 🌸'}
+                {isLogin ? 'Sign In' : 'Create Account'}
               </Text>
             )}
           </TouchableOpacity>
@@ -191,6 +193,9 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 28,
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   blobTop: {
     position: 'absolute',

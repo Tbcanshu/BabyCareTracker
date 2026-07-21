@@ -6,11 +6,10 @@ import {
   Image,
   TouchableOpacity,
   Animated,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const { width, height } = Dimensions.get('window');
+import { clamp } from '../utils/responsive';
 
 // BabyBloom brand colors
 const C = {
@@ -27,12 +26,12 @@ const C = {
 
 const SplashScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const logoSize = clamp(width * 0.82, 140, 320);
 
   // Animations
   const logoScale = useRef(new Animated.Value(0.7)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const textOpacity = useRef(new Animated.Value(0)).current;
-  const textTranslate = useRef(new Animated.Value(30)).current;
   const btnOpacity = useRef(new Animated.Value(0)).current;
   const btnTranslate = useRef(new Animated.Value(40)).current;
 
@@ -49,20 +48,6 @@ const SplashScreen = ({ navigation }) => {
         Animated.timing(logoOpacity, {
           toValue: 1,
           duration: 600,
-          useNativeDriver: true,
-        }),
-      ]),
-      // Text slides up
-      Animated.parallel([
-        Animated.timing(textOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.spring(textTranslate, {
-          toValue: 0,
-          tension: 50,
-          friction: 8,
           useNativeDriver: true,
         }),
       ]),
@@ -93,37 +78,18 @@ const SplashScreen = ({ navigation }) => {
       <Animated.View
         style={[
           styles.logoWrapper,
-          { opacity: logoOpacity, transform: [{ scale: logoScale }] },
+          {
+            opacity: logoOpacity,
+            transform: [{ scale: logoScale }],
+          },
         ]}
       >
         <Image
           source={require('../../assets/babybloom_logo.png')}
-          style={styles.logo}
+          style={{ width: logoSize, height: logoSize }}
           resizeMode="contain"
         />
       </Animated.View>
-
-      {/* Tagline */}
-      <Animated.View
-        style={{
-          opacity: textOpacity,
-          transform: [{ translateY: textTranslate }],
-          alignItems: 'center',
-          marginTop: 8,
-        }}
-      >
-        <View style={styles.pillTag}>
-          <Text style={styles.pillDot}>🌿</Text>
-          <Text style={styles.pillText}>Gentle  •  Pure  •  Premium</Text>
-          <Text style={styles.pillDot}>🌸</Text>
-        </View>
-        <Text style={styles.subTagline}>
-          Your complete baby care companion
-        </Text>
-      </Animated.View>
-
-      {/* Spacer */}
-      <View style={{ flex: 1 }} />
 
       {/* CTA Button */}
       <Animated.View
@@ -131,6 +97,9 @@ const SplashScreen = ({ navigation }) => {
           opacity: btnOpacity,
           transform: [{ translateY: btnTranslate }],
           width: '100%',
+          maxWidth: 480,
+          alignSelf: 'center',
+          marginTop: 16,
           paddingHorizontal: 32,
           paddingBottom: 40,
         }}
@@ -140,7 +109,7 @@ const SplashScreen = ({ navigation }) => {
           activeOpacity={0.85}
           onPress={() => navigation.navigate('RoleSelection')}
         >
-          <Text style={styles.ctaBtnText}>Get Started 🌸</Text>
+          <Text style={styles.ctaBtnText}>Get Started</Text>
         </TouchableOpacity>
 
         <Text style={styles.loginHint}>
@@ -162,7 +131,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: C.bg,
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
   blobTopLeft: {
     position: 'absolute',
@@ -185,46 +154,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   logoWrapper: {
-    marginTop: height * 0.08,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  logo: {
-    width: width * 0.82,
-    height: width * 0.82,
-  },
-  pillTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.white,
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#F0E0E8',
-    shadowColor: '#E87A84',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  pillText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: C.textSec,
-    letterSpacing: 0.5,
-  },
-  pillDot: {
-    fontSize: 14,
-  },
-  subTagline: {
-    marginTop: 14,
-    fontSize: 15,
-    color: C.textSec,
-    fontWeight: '500',
-    textAlign: 'center',
-    letterSpacing: 0.3,
   },
   ctaBtn: {
     backgroundColor: C.green,

@@ -33,9 +33,10 @@ class MainActivity : ReactActivity() {
 
   private fun handleIntent(intent: Intent?) {
     if (intent != null && intent.getBooleanExtra("alarmTriggered", false)) {
+      val id = intent.getStringExtra("alarmId")
       val title = intent.getStringExtra("alarmTitle")
       val body = intent.getStringExtra("alarmBody")
-      AlarmModule.onAlarmTriggered(title, body)
+      AlarmModule.onAlarmTriggered(id, title, body)
     }
   }
 

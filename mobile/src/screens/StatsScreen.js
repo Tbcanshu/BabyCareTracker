@@ -192,7 +192,7 @@ const ActivityBubble = ({ emoji, count, color }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: SPACING.md, paddingBottom: SPACING.xxl },
+  content: { padding: SPACING.md, paddingBottom: SPACING.xxl, width: '100%', maxWidth: 700, alignSelf: 'center' },
   chartCard: { marginBottom: SPACING.md },
   barChart: {
     flexDirection: 'row',

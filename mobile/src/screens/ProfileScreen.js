@@ -9,23 +9,33 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
 import { COLORS, FONTS, SPACING, RADIUS, SHADOWS } from '../theme';
-import { getBabyProfile, saveBabyProfile } from '../storage';
+import { getBabyProfile, saveBabyProfile, getCurrentUser } from '../storage';
 import { Button, Input } from '../components/UI';
 import { authApi, clearAuthToken } from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
+import { formatDateFull } from '../utils/helpers';
+
+const KG_TO_LB = 2.20462;
 
 const ProfileScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
+  const [weightUnit, setWeightUnit] = useState('kg');
   const [photoUri, setPhotoUri] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [parentName, setParentName] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const authContext = React.useContext(AuthContext);
 
   const loadProfile = async () => {
@@ -35,8 +45,13 @@ const ProfileScreen = ({ navigation }) => {
       setDob(profile.dob || '');
       setGender(profile.gender || '');
       setWeight(profile.weight || '');
+      setWeightUnit(profile.weightUnit || 'kg');
       setPhotoUri(profile.photoUri || null);
     }
+
+    const user = await getCurrentUser();
+    setParentName(user?.name || '');
+    setParentEmail(user?.email || '');
   };
 
   useFocusEffect(
@@ -63,7 +78,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleSave = async () => {
-    const profile = { name, dob, gender, weight, photoUri };
+    const profile = { name, dob, gender, weight, weightUnit, photoUri };
     const ok = await saveBabyProfile(profile);
     if (ok) {
       setSaved(true);
@@ -72,6 +87,22 @@ const ProfileScreen = ({ navigation }) => {
       }
       setTimeout(() => setSaved(false), 2000);
     }
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (event.type === 'dismissed' || !selectedDate) return;
+    setDob(format(selectedDate, 'yyyy-MM-dd'));
+  };
+
+  const handleToggleWeightUnit = (unit) => {
+    if (unit === weightUnit) return;
+    const num = parseFloat(weight);
+    if (!isNaN(num)) {
+      const converted = unit === 'lb' ? num * KG_TO_LB : num / KG_TO_LB;
+      setWeight(converted.toFixed(2));
+    }
+    setWeightUnit(unit);
   };
 
   const ageDisplay = () => {
@@ -126,29 +157,94 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.tapHint}>Tap to change photo</Text>
         </View>
 
+        {/* Parent */}
+        {parentName ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Parent</Text>
+            <Text style={styles.parentName}>{parentName}</Text>
+            {parentEmail ? (
+              <Text style={styles.parentEmail}>{parentEmail}</Text>
+            ) : null}
+          </View>
+        ) : null}
+
         {/* Profile Form */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Baby Profile</Text>
           <Input
             label="Baby's Name"
+            labelStyle={styles.inputLabel}
             value={name}
             onChangeText={setName}
             placeholder="e.g. Aria"
           />
-          <Input
-            label="Date of Birth (YYYY-MM-DD)"
-            value={dob}
-            onChangeText={setDob}
-            placeholder="e.g. 2024-06-15"
-            keyboardType="numbers-and-punctuation"
-          />
-          <Input
-            label="Birth Weight (kg)"
-            value={weight}
-            onChangeText={setWeight}
-            placeholder="e.g. 3.2"
-            keyboardType="decimal-pad"
-          />
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Date of Birth</Text>
+            <TouchableOpacity
+              style={styles.dateField}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={dob ? styles.dateText : styles.datePlaceholder}>
+                {dob ? formatDateFull(dob) : 'MM-DD-YYYY'}
+              </Text>
+              <Text style={styles.dateIcon}>📅</Text>
+            </TouchableOpacity>
+          </View>
+          {showDatePicker && (
+            <View>
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(false)}
+                  style={styles.datePickerDoneBtn}
+                >
+                  <Text style={styles.datePickerDoneText}>Done</Text>
+                </TouchableOpacity>
+              )}
+              <DateTimePicker
+                value={dob ? new Date(dob) : new Date()}
+                mode="date"
+                display={Platform.OS === 'android' ? 'calendar' : 'spinner'}
+                maximumDate={new Date()}
+                onChange={handleDateChange}
+              />
+            </View>
+          )}
+
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Birth Weight</Text>
+            <View style={styles.weightRow}>
+              <TextInput
+                value={weight}
+                onChangeText={setWeight}
+                placeholder="e.g. 3.2"
+                placeholderTextColor={COLORS.textLight}
+                keyboardType="decimal-pad"
+                style={styles.weightInput}
+              />
+              <View style={styles.unitToggle}>
+                {['kg', 'lb'].map((u) => (
+                  <TouchableOpacity
+                    key={u}
+                    onPress={() => handleToggleWeightUnit(u)}
+                    style={[
+                      styles.unitChip,
+                      weightUnit === u && styles.unitChipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.unitText,
+                        weightUnit === u && styles.unitTextActive,
+                      ]}
+                    >
+                      {u}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
 
           <Text style={styles.inputLabel}>Gender</Text>
           <View style={styles.genderRow}>
@@ -177,7 +273,7 @@ const ProfileScreen = ({ navigation }) => {
           <Button
             title={saved ? '✅ Profile Saved!' : 'Save Profile'}
             onPress={handleSave}
-            style={{ marginTop: SPACING.md }}
+            style={{ marginTop: SPACING.md, alignSelf: 'center', paddingHorizontal: 32 }}
           />
         </View>
 
@@ -193,7 +289,7 @@ const ProfileScreen = ({ navigation }) => {
               await clearAuthToken();
               if (authContext) authContext.logout();
             }}
-            style={{ marginTop: SPACING.sm }}
+            style={{ marginTop: SPACING.sm, alignSelf: 'center', paddingHorizontal: 32 }}
           />
         </View>
       </ScrollView>
@@ -203,7 +299,7 @@ const ProfileScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: SPACING.md, paddingBottom: SPACING.xxl },
+  content: { padding: SPACING.md, paddingBottom: SPACING.xxl, width: '100%', maxWidth: 700, alignSelf: 'center' },
   avatarSection: { alignItems: 'center', marginBottom: SPACING.lg, paddingTop: SPACING.sm },
   avatarWrapper: {
     position: 'relative',
@@ -262,24 +358,108 @@ const styles = StyleSheet.create({
     ...SHADOWS.sm,
   },
   cardTitle: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: '700',
+    fontSize: FONTS.sizes.xl,
+    fontWeight: '800',
     color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
-  inputLabel: {
+  parentName: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  parentEmail: {
     fontSize: FONTS.sizes.sm,
-    fontWeight: '600',
     color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  inputLabel: {
+    fontSize: FONTS.sizes.lg,
+    fontWeight: '500',
+    color: COLORS.primaryDark,
     marginBottom: 6,
+  },
+  inputWrapper: {
+    marginBottom: SPACING.md,
+  },
+  dateField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surfaceAlt,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  dateText: {
+    fontSize: FONTS.sizes.md,
+    color: COLORS.textPrimary,
+  },
+  datePlaceholder: {
+    fontSize: FONTS.sizes.md,
+    color: COLORS.textLight,
+  },
+  dateIcon: {
+    fontSize: 16,
+  },
+  datePickerDoneBtn: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  datePickerDoneText: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '700',
+    color: COLORS.primaryDark,
+  },
+  weightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  weightInput: {
+    flex: 1,
+    backgroundColor: COLORS.surfaceAlt,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+    fontSize: FONTS.sizes.md,
+    color: COLORS.textPrimary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  unitToggle: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surfaceAlt,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  unitChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  unitChipActive: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  unitText: {
+    fontSize: FONTS.sizes.xs,
+    fontWeight: '500',
+    color: COLORS.primaryDark,
+  },
+  unitTextActive: {
+    color: COLORS.primaryDark,
   },
   genderRow: { flexDirection: 'row', gap: 8, marginBottom: SPACING.sm },
   genderChip: {
     flex: 1,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.sm,
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    paddingVertical: 10,
+    paddingVertical: 7,
     alignItems: 'center',
     backgroundColor: COLORS.surfaceAlt,
   },
@@ -288,9 +468,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryLight,
   },
   genderText: {
-    fontSize: FONTS.sizes.sm,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: FONTS.sizes.xs,
+    fontWeight: '500',
+    color: COLORS.primaryDark,
   },
   genderTextActive: { color: COLORS.primaryDark },
 });

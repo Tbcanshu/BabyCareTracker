@@ -13,7 +13,9 @@ import {
   Dimensions,
   Platform,
   KeyboardAvoidingView,
+  useWindowDimensions,
 } from "react-native";
+import { clamp } from "../utils/responsive";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -96,6 +98,10 @@ const formatMonthLabel = (key) => {
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 const GrowthScreen = () => {
   const insets = useSafeAreaInsets();
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
+  const photoViewSize = clamp(Math.min(winWidth, winHeight) * 0.85, 200, 600);
+  const [weightChartWidth, setWeightChartWidth] = useState(0);
+  const [heightChartWidth, setHeightChartWidth] = useState(0);
   const [activeTab, setActiveTab] = useState("timeline");
   const [photos, setPhotos] = useState([]);
   const [measurements, setMeasurements] = useState([]);
@@ -382,7 +388,10 @@ const GrowthScreen = () => {
 
           {/* Simple weight chart */}
           {measurements.filter((m) => m.weight_lbs).length > 1 && (
-            <View style={styles.chartCard}>
+            <View
+              style={styles.chartCard}
+              onLayout={(e) => setWeightChartWidth(e.nativeEvent.layout.width)}
+            >
               <Text style={styles.chartTitle}>⚖️ Weight Over Time (lbs)</Text>
               <SimpleLineChart
                 data={measurements
@@ -397,13 +406,17 @@ const GrowthScreen = () => {
                     ),
                   }))}
                 color={C.orange}
+                containerWidth={weightChartWidth}
               />
             </View>
           )}
 
           {/* Height chart */}
           {measurements.filter((m) => m.height_in).length > 1 && (
-            <View style={styles.chartCard}>
+            <View
+              style={styles.chartCard}
+              onLayout={(e) => setHeightChartWidth(e.nativeEvent.layout.width)}
+            >
               <Text style={styles.chartTitle}>📏 Height Over Time (in)</Text>
               <SimpleLineChart
                 data={measurements
@@ -742,7 +755,10 @@ const GrowthScreen = () => {
             <>
               <Image
                 source={{ uri: selectedPhoto.uri }}
-                style={styles.photoViewImg}
+                style={[
+                  styles.photoViewImg,
+                  { width: photoViewSize, height: photoViewSize },
+                ]}
                 resizeMode="contain"
               />
               {selectedPhoto.caption ? (
@@ -771,14 +787,16 @@ const GrowthScreen = () => {
 };
 
 // ─── Simple Line Chart Component ─────────────────────────────────────────────
-const SimpleLineChart = ({ data, color }) => {
+const SimpleLineChart = ({ data, color, containerWidth }) => {
   if (!data || data.length < 2) return null;
   const values = data.map((d) => d.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
   const chartH = 100;
-  const chartW = SCREEN_WIDTH - 80;
+  // Card has 16px padding each side; fall back to the screen-based guess
+  // until onLayout reports the card's actual measured width.
+  const chartW = clamp((containerWidth || SCREEN_WIDTH) - 32, 120, 640);
   const stepX = chartW / (data.length - 1);
 
   const points = data.map((d, i) => ({
@@ -867,7 +885,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 12, fontWeight: "600", color: C.textLight },
   tabTextActive: { color: C.primaryDark },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 100 },
+  scrollContent: { padding: 16, paddingBottom: 100, width: '100%', maxWidth: 700, alignSelf: 'center' },
 
   addPhotoBtn: {
     backgroundColor: C.primaryDark,
@@ -908,7 +926,7 @@ const styles = StyleSheet.create({
   },
   photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   photoThumb: {
-    width: (SCREEN_WIDTH - 56) / 3,
+    width: clamp((SCREEN_WIDTH - 56) / 3, 90, 160),
     borderRadius: 12,
     overflow: "hidden",
     backgroundColor: C.surfaceAlt,
@@ -1127,8 +1145,6 @@ const styles = StyleSheet.create({
   photoViewClose: { position: "absolute", top: 50, right: 20, padding: 10 },
   photoViewCloseText: { color: C.white, fontSize: 22, fontWeight: "700" },
   photoViewImg: {
-    width: SCREEN_WIDTH - 40,
-    height: SCREEN_WIDTH - 40,
     borderRadius: 16,
   },
   photoViewCaption: {

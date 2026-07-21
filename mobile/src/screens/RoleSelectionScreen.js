@@ -6,12 +6,9 @@ import {
   TouchableOpacity,
   Animated,
   Image,
-  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
-
-const { width } = Dimensions.get('window');
 
 // BabyBloom brand colors
 const C = {
@@ -157,45 +154,47 @@ const RoleSelectionScreen = ({ navigation }) => {
       <View style={styles.blobTop} />
       <View style={styles.blobBottom} />
 
-      {/* Header */}
-      <Animated.View
-        style={[
-          styles.header,
-          { opacity: headerOpacity, transform: [{ translateY: headerTranslate }] },
-        ]}
-      >
-        {/* Mini logo mark */}
-        <Image
-          source={require('../../assets/babybloom_logo.png')}
-          style={styles.miniLogo}
-          resizeMode="contain"
-        />
-
-        <Text style={styles.heading}>Choose Your Role</Text>
-        <Text style={styles.subHeading}>
-          How would you like to use BabyBloom?
-        </Text>
-      </Animated.View>
-
-      {/* Role Cards */}
-      <View style={styles.cardsContainer}>
-        {ROLES.map((role, index) => (
-          <RoleCard
-            key={role.key}
-            role={role}
-            index={index}
-            onPress={handleRoleSelect}
+      <View style={styles.content}>
+        {/* Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            { opacity: headerOpacity, transform: [{ translateY: headerTranslate }] },
+          ]}
+        >
+          {/* Mini logo mark */}
+          <Image
+            source={require('../../assets/babybloom_logo.png')}
+            style={styles.miniLogo}
+            resizeMode="contain"
           />
-        ))}
-      </View>
 
-      {/* Back link */}
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.backBtn}
-      >
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
+          <Text style={styles.heading}>Choose Your Role</Text>
+          <Text style={styles.subHeading}>
+            How would you like to use BabyBloom?
+          </Text>
+        </Animated.View>
+
+        {/* Role Cards */}
+        <View style={styles.cardsContainer}>
+          {ROLES.map((role, index) => (
+            <RoleCard
+              key={role.key}
+              role={role}
+              index={index}
+              onPress={handleRoleSelect}
+            />
+          ))}
+        </View>
+
+        {/* Back link */}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={[styles.backBtn, { marginBottom: insets.bottom }]}
+        >
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -204,6 +203,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: C.bg,
+  },
+  content: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     paddingHorizontal: 24,
   },
   blobTop: {
@@ -307,8 +312,8 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignItems: 'center',
-    paddingVertical: 20,
-    paddingBottom: 32,
+    paddingTop: 20,
+    paddingBottom: 12,
   },
   backText: {
     color: C.textSec,

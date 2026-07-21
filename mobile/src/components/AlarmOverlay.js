@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   Vibration,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   Platform,
+  NativeModules,
 } from "react-native";
 import { useAudioPlayer } from "expo-audio";
+import { clamp } from "../utils/responsive";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { AlarmModule } = NativeModules;
 
 /**
  * AlarmOverlay — a full-screen alarm popup that plays a loud alarm sound,
@@ -20,13 +22,16 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
  *
  * Props:
  *   visible     (bool)   — whether the alarm is active
+ *   alarmId     (string) — id of the reminder that triggered this alarm
  *   title       (string) — notification title
  *   body        (string) — notification body
  *   onDismiss   (fn)     — callback when user taps "Stop Alarm"
  */
-const AlarmOverlay = ({ visible, title, body, onDismiss }) => {
+const AlarmOverlay = ({ visible, alarmId, title, body, onDismiss }) => {
   const player = useAudioPlayer(require("../../assets/audio/alarm.wav"));
   player.loop = true;
+  const { width: winWidth } = useWindowDimensions();
+  const glowSize = clamp(winWidth * 0.9, 260, 420);
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -145,6 +150,17 @@ const AlarmOverlay = ({ visible, title, body, onDismiss }) => {
       }
     }
 
+    // Clear the persistent native alarm notification (Android). Without this
+    // the sticky notification created for this alarm stays in the tray even
+    // after the sound/vibration are stopped, looking like the alarm "kept coming back".
+    if (Platform.OS === "android" && AlarmModule && alarmId) {
+      try {
+        await AlarmModule.dismissAlarm(alarmId);
+      } catch (e) {
+        console.warn("dismissAlarm error:", e);
+      }
+    }
+
     // Exit animation then dismiss
     Animated.timing(fadeAnim, {
       toValue: 0,
@@ -174,7 +190,12 @@ const AlarmOverlay = ({ visible, title, body, onDismiss }) => {
         <Animated.View
           style={[
             styles.glowCircle,
-            { transform: [{ scale: pulseAnim }] },
+            {
+              width: glowSize,
+              height: glowSize,
+              borderRadius: glowSize / 2,
+              transform: [{ scale: pulseAnim }],
+            },
           ]}
         />
 
@@ -239,13 +260,11 @@ const styles = StyleSheet.create({
   },
   glowCircle: {
     position: "absolute",
-    width: SCREEN_WIDTH * 0.9,
-    height: SCREEN_WIDTH * 0.9,
-    borderRadius: SCREEN_WIDTH * 0.45,
     backgroundColor: "rgba(232, 90, 120, 0.12)",
   },
   card: {
     width: "100%",
+    maxWidth: 420,
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
     paddingVertical: 36,

@@ -556,7 +556,7 @@ const ReminderCard = ({ reminder, onToggle, onDelete }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 100 },
+  scrollContent: { padding: 16, paddingBottom: 100, width: '100%', maxWidth: 700, alignSelf: 'center' },
 
   permWarning: {
     backgroundColor: "#FFF3CD",

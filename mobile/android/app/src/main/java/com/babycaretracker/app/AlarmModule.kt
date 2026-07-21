@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -29,8 +30,9 @@ class AlarmModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         private var instance: AlarmModule? = null
         private var pendingAlarm: WritableMap? = null
 
-        fun onAlarmTriggered(title: String?, body: String?) {
+        fun onAlarmTriggered(id: String?, title: String?, body: String?) {
             val params = Arguments.createMap().apply {
+                putString("id", id)
                 putString("title", title)
                 putString("body", body)
             }
@@ -179,5 +181,15 @@ class AlarmModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     fun getPendingAlarm(promise: Promise) {
         promise.resolve(pendingAlarm)
         pendingAlarm = null
+    }
+
+    @ReactMethod
+    fun dismissAlarm(id: String, promise: Promise) {
+        try {
+            NotificationManagerCompat.from(context).cancel(id.hashCode())
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERROR_DISMISSING_ALARM", e.message, e)
+        }
     }
 }

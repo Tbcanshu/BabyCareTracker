@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.jpeg",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -13,6 +14,7 @@
       "bundleIdentifier": "com.babycaretracker.app",
       "buildNumber": "1.0.0",
       "deploymentTarget": "15.1",
+      "icon": "./assets/icon.jpeg",
       "infoPlist": {
         "UIBackgroundModes": [
           "audio",
@@ -26,6 +28,7 @@
       "package": "com.babycaretracker.app",
       "versionCode": 1,
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.jpeg",
         "backgroundColor": "#FFF5F8"
       },
       "permissions": [
@@ -55,7 +58,8 @@
           }
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

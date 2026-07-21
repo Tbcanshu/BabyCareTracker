@@ -185,6 +185,9 @@ const styles = StyleSheet.create({
   listContent: {
     padding: SPACING.md,
     paddingBottom: 100,
+    width: '100%',
+    maxWidth: 700,
+    alignSelf: 'center',
   },
   dateGroup: {
     marginBottom: SPACING.md,

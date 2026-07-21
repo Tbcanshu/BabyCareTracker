@@ -431,6 +431,9 @@ const styles = StyleSheet.create({
   chatList: {
     paddingHorizontal: SPACING.md,
     paddingTop: SPACING.md,
+    width: '100%',
+    maxWidth: 700,
+    alignSelf: 'center',
   },
   messageRow: {
     flexDirection: 'row',

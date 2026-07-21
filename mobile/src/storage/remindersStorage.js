@@ -32,6 +32,20 @@ export const setupNotifications = async () => {
       lockscreenVisibility: 1, // 1 = PUBLIC
       bypassDnd: true,
     });
+
+    // One-time cleanup: older app versions also scheduled reminders through
+    // expo-notifications in parallel with the native AlarmManager alarm, so
+    // every reminder fired twice. Android now relies solely on the native
+    // alarm, so cancel any leftover Expo-scheduled reminder notifications.
+    if (AlarmModule) {
+      const alreadyCleaned = await AsyncStorage.getItem(
+        "expo_alarm_dedupe_done"
+      );
+      if (!alreadyCleaned) {
+        await Notifications.cancelAllScheduledNotificationsAsync();
+        await AsyncStorage.setItem("expo_alarm_dedupe_done", "true");
+      }
+    }
   }
 };
 
@@ -87,24 +101,29 @@ export const scheduleNotification = async (reminder) => {
       };
     }
 
-    const notifId = await Notifications.scheduleNotificationAsync({
-      identifier: reminder.id,
-      content: {
-        title: reminder.emoji + " " + reminder.label,
-        body: reminder.message || "Time for " + reminder.label + "!",
-        sound: "default",
-        vibrate: [0, 500, 300, 500, 300, 800],
-        priority: Notifications.AndroidNotificationPriority.MAX,
-        sticky: true, // Notification persists until user interacts
-        data: { isAlarm: true, reminderId: reminder.id },
-        // Android channel
-        ...(Platform.OS === "android" && { channelId: "baby-alarm" }),
-      },
-      trigger,
-    });
+    // On Android the native AlarmModule (below) fully owns scheduling,
+    // wake-up, and the full-screen alarm UI. Scheduling through
+    // expo-notifications as well would fire a second, uncoordinated alarm
+    // for the same reminder, so it's only used here on iOS.
+    const useNativeAlarm = Platform.OS === "android" && AlarmModule;
+    const notifId = useNativeAlarm
+      ? null
+      : await Notifications.scheduleNotificationAsync({
+          identifier: reminder.id,
+          content: {
+            title: reminder.emoji + " " + reminder.label,
+            body: reminder.message || "Time for " + reminder.label + "!",
+            sound: "default",
+            vibrate: [0, 500, 300, 500, 300, 800],
+            priority: Notifications.AndroidNotificationPriority.MAX,
+            sticky: true, // Notification persists until user interacts
+            data: { isAlarm: true, reminderId: reminder.id },
+          },
+          trigger,
+        });
 
     // Schedule native alarm manager for background/locked screen wakeup
-    if (Platform.OS === "android" && AlarmModule) {
+    if (useNativeAlarm) {
       const title = (reminder.emoji || "⏰") + " " + (reminder.label || "Reminder");
       const body = reminder.message || "Time for " + (reminder.label || "reminder") + "!";
       try {

@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Text, View, Image, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS as DEFAULT_COLORS, FONTS, setGlobalTheme } from "./src/theme";
 import { getBabyProfile, clearAllData } from "./src/storage";
@@ -27,12 +28,12 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 const TAB_ICONS = {
-  Home: require('./assets/icons/icon_home.png'),
-  History: require('./assets/icons/icon_history.png'),
-  Growth: require('./assets/icons/icon_growth.png'),
-  Reminders: require('./assets/icons/icon_reminders.png'),
-  Stats: require('./assets/icons/icon_stats.png'),
-  Profile: require('./assets/icons/icon_profile.png'),
+  Home: require('./assets/icons/icon_home.jpg'),
+  History: require('./assets/icons/icon_history.jpg'),
+  Growth: require('./assets/icons/icon_growth.jpg'),
+  Reminders: require('./assets/icons/icon_reminders.jpg'),
+  Stats: require('./assets/icons/icon_stats.jpg'),
+  Profile: require('./assets/icons/icon_profile.jpg'),
 };
 
 const tabIcon = (name, focused, activeColor) => (
@@ -56,6 +57,11 @@ const tabIcon = (name, focused, activeColor) => (
 
 const HomeTabs = ({ route }) => {
   const { colors } = route.params || { colors: DEFAULT_COLORS };
+  const insets = useSafeAreaInsets();
+  // Use the device's real bottom inset (gesture bar / 3-button nav / home
+  // indicator) instead of a guessed constant, so the tab bar never ends up
+  // underneath the system's own navigation buttons.
+  const tabBarBottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 12);
   return (
     <Tab.Navigator
       sceneContainerStyle={{ backgroundColor: colors.background }}
@@ -66,8 +72,8 @@ const HomeTabs = ({ route }) => {
           borderTopWidth: 1,
           borderTopColor: colors.border,
           paddingTop: 8,
-          height: Platform.OS === 'ios' ? 100 : 80,
-          paddingBottom: Platform.OS === 'ios' ? 32 : 18,
+          height: 56 + tabBarBottomPadding,
+          paddingBottom: tabBarBottomPadding,
         },
         tabBarActiveTintColor: colors.primaryDark,
         tabBarInactiveTintColor: colors.textLight,

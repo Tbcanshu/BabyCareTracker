@@ -356,6 +356,9 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.md,
     paddingBottom: SPACING.xxl,
+    width: '100%',
+    maxWidth: 700,
+    alignSelf: 'center',
   },
   headerCard: {
     flexDirection: 'row',

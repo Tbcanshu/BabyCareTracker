@@ -100,9 +100,10 @@ export const Input = ({
   multiline = false,
   style,
   inputStyle,
+  labelStyle,
 }) => (
   <View style={[styles.inputWrapper, style]}>
-    {label ? <Text style={styles.inputLabel}>{label}</Text> : null}
+    {label ? <Text style={[styles.inputLabel, labelStyle]}>{label}</Text> : null}
     <TextInput
       value={value}
       onChangeText={onChangeText}

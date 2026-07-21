@@ -18,6 +18,7 @@ export default function App() {
 
   // Alarm overlay state
   const [alarmVisible, setAlarmVisible] = useState(false);
+  const [alarmId, setAlarmId] = useState(null);
   const [alarmTitle, setAlarmTitle] = useState("");
   const [alarmBody, setAlarmBody] = useState("");
 
@@ -35,6 +36,7 @@ export default function App() {
         if (Platform.OS === 'android' && AlarmModule) {
           const pending = await AlarmModule.getPendingAlarm();
           if (pending) {
+            setAlarmId(pending.id || null);
             setAlarmTitle(pending.title || "⏰ Alarm!");
             setAlarmBody(pending.body || "Time to check on your baby!");
             setAlarmVisible(true);
@@ -68,7 +70,8 @@ export default function App() {
     // When a notification fires while the app is open, show the alarm overlay
     notifReceivedRef.current =
       Notifications.addNotificationReceivedListener((notification) => {
-        const { title, body } = notification.request.content;
+        const { title, body, data } = notification.request.content;
+        setAlarmId(data?.reminderId || null);
         setAlarmTitle(title || "⏰ Alarm!");
         setAlarmBody(body || "Time to check on your baby!");
         setAlarmVisible(true);
@@ -78,7 +81,8 @@ export default function App() {
     // When user taps the notification from the tray, also show the overlay
     notifResponseRef.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        const { title, body } = response.notification.request.content;
+        const { title, body, data } = response.notification.request.content;
+        setAlarmId(data?.reminderId || null);
         setAlarmTitle(title || "⏰ Alarm!");
         setAlarmBody(body || "Time to check on your baby!");
         setAlarmVisible(true);
@@ -88,6 +92,7 @@ export default function App() {
     const alarmSubscription = DeviceEventEmitter.addListener(
       "onAlarmTriggered",
       (event) => {
+        setAlarmId(event.id || null);
         setAlarmTitle(event.title || "⏰ Alarm!");
         setAlarmBody(event.body || "Time to check on your baby!");
         setAlarmVisible(true);
@@ -127,6 +132,7 @@ export default function App() {
       {/* Full-screen alarm overlay — renders above everything */}
       <AlarmOverlay
         visible={alarmVisible}
+        alarmId={alarmId}
         title={alarmTitle}
         body={alarmBody}
         onDismiss={() => setAlarmVisible(false)}

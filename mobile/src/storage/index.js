@@ -3,6 +3,29 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const KEYS = {
   ENTRIES: 'baby_care_entries',
   BABY_PROFILE: 'baby_profile',
+  CURRENT_USER: 'current_user',
+};
+
+// ─── Current (Parent) User ───────────────────────────────────────────────────
+
+export const saveCurrentUser = async (user) => {
+  try {
+    await AsyncStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+    return true;
+  } catch (e) {
+    console.error('saveCurrentUser error:', e);
+    return false;
+  }
+};
+
+export const getCurrentUser = async () => {
+  try {
+    const raw = await AsyncStorage.getItem(KEYS.CURRENT_USER);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.error('getCurrentUser error:', e);
+    return null;
+  }
 };
 
 // ─── Entry Helpers ───────────────────────────────────────────────────────────
@@ -152,7 +175,7 @@ export const getTodayStats = async () => {
 
 export const clearAllData = async () => {
   try {
-    await AsyncStorage.multiRemove([KEYS.ENTRIES, KEYS.BABY_PROFILE]);
+    await AsyncStorage.multiRemove([KEYS.ENTRIES, KEYS.BABY_PROFILE, KEYS.CURRENT_USER]);
     return true;
   } catch (e) {
     return false;
